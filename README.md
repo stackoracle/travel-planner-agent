@@ -1,6 +1,6 @@
-# Waypoint — AI Travel Planner
+# Waypoint - AI Travel Planner
 
-A multi-agent AI travel planning tool that streams a complete trip package in real time. Five specialised agents run in parallel and synthesise destination research, flights, hotels, weather, and a day-by-day itinerary — all visible live in the browser as they work.
+A multi-agent AI travel planning tool that streams a complete trip package in real time. Five specialised agents run in parallel and synthesise destination research, flights, hotels, weather, and a day-by-day itinerary - all visible live in the browser as they work.
 
 Built as a portfolio project to demonstrate agentic AI architecture, SSE streaming, parallel tool use, and a polished editorial UI.
 
@@ -16,28 +16,28 @@ Built as a portfolio project to demonstrate agentic AI architecture, SSE streami
 
 The user fills in a trip form (destination, origin, dates, budget, travel style). On submit:
 
-1. **Four agents start in parallel** — each researches one dimension of the trip.
+1. **Four agents start in parallel** - each researches one dimension of the trip.
 2. **Results stream to the browser in real time** via Server-Sent Events.
-3. **Itinerary agent runs after all four complete** — synthesises everything into a structured day-by-day plan.
-4. **The map updates** — clicking a day card geocodes the day's activity locations and draws an animated curved route between them.
+3. **Itinerary agent runs after all four complete** - synthesises everything into a structured day-by-day plan.
+4. **The map updates** - clicking a day card geocodes the day's activity locations and draws an animated curved route between them.
 
-| Agent | What it does | API used |
-|---|---|---|
-| `destination_agent` | Top attractions, neighbourhoods, local tips | Tavily web search |
-| `flight_agent` | Routes, price ranges, booking advice | Tavily web search |
-| `hotel_agent` | Accommodation options matched to budget + style | Tavily web search |
-| `weather_agent` | Forecast for travel dates + packing advice | Open-Meteo (free, no key) |
-| `itinerary_agent` | Day-by-day plan synthesising all agent outputs | GPT-4o-mini |
+| Agent                 | What it does                                    | API used                  |
+| --------------------- | ----------------------------------------------- | ------------------------- |
+| `destination_agent` | Top attractions, neighbourhoods, local tips     | Tavily web search         |
+| `flight_agent`      | Routes, price ranges, booking advice            | Tavily web search         |
+| `hotel_agent`       | Accommodation options matched to budget + style | Tavily web search         |
+| `weather_agent`     | Forecast for travel dates + packing advice      | Open-Meteo (free, no key) |
+| `itinerary_agent`   | Day-by-day plan synthesising all agent outputs  | GPT-4o-mini               |
 
 ---
 
 ## Stack
 
-**Frontend** — Next.js 15 (App Router) · Turbopack · Tailwind CSS v4 · shadcn/ui · Zustand · Framer Motion · Leaflet
+**Frontend** - Next.js 15 (App Router) · Turbopack · Tailwind CSS v4 · shadcn/ui · Zustand · Framer Motion · Leaflet
 
-**Backend** — FastAPI · Uvicorn · OpenAI SDK · SSE-Starlette · Pydantic v2 · httpx · Loguru
+**Backend** - FastAPI · Uvicorn · OpenAI SDK · SSE-Starlette · Pydantic v2 · httpx · Loguru
 
-**External APIs** — Tavily · Open-Meteo · ExchangeRate-API · Nominatim (geocoding, proxied via backend)
+**External APIs** - Tavily · Open-Meteo · ExchangeRate-API · Nominatim (geocoding, proxied via backend)
 
 ---
 
@@ -156,17 +156,17 @@ GET  /api/geocode?q=...     Nominatim proxy (avoids browser CORS)
 
 ## Key Design Decisions
 
-**Parallel agents via `asyncio.gather`** — the four research agents run concurrently; total wall-clock time is the slowest single agent, not their sum.
+**Parallel agents via `asyncio.gather`** - the four research agents run concurrently; total wall-clock time is the slowest single agent, not their sum.
 
-**Itinerary agent as synthesiser** — runs only after all four parallel agents emit `complete`, so it has the full context before generating the structured plan.
+**Itinerary agent as synthesiser** - runs only after all four parallel agents emit `complete`, so it has the full context before generating the structured plan.
 
-**Token streaming without re-render thrashing** — `StreamingText` uses React 18's `useDeferredValue` to batch expensive ReactMarkdown re-parses during high-frequency token bursts.
+**Token streaming without re-render thrashing** - `StreamingText` uses React 18's `useDeferredValue` to batch expensive ReactMarkdown re-parses during high-frequency token bursts.
 
-**Geocoding proxied through backend** — Nominatim blocks browser-origin requests; all geocoding goes through `GET /api/geocode` to avoid CORS errors.
+**Geocoding proxied through backend** - Nominatim blocks browser-origin requests; all geocoding goes through `GET /api/geocode` to avoid CORS errors.
 
-**Interactive map with animated routes** — when a day card is selected, the day's activity locations are geocoded and connected with a quadratic bezier arc drawn via SVG `stroke-dashoffset` animation and a custom `<marker>` arrowhead.
+**Interactive map with animated routes** - when a day card is selected, the day's activity locations are geocoded and connected with a quadratic bezier arc drawn via SVG `stroke-dashoffset` animation and a custom `<marker>` arrowhead.
 
-**No Maps SDK** — the map is plain Leaflet with OpenStreetMap tiles; no Google Maps JS bundle cost.
+**No Maps SDK** - the map is plain Leaflet with OpenStreetMap tiles; no Google Maps JS bundle cost.
 
 ---
 

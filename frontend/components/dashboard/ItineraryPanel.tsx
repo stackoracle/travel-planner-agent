@@ -1,61 +1,67 @@
-"use client"
+"use client";
 
-import { useEffect, useRef, useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { useTripStore } from "@/store/tripStore"
-import { DayCard } from "@/components/cards/DayCard"
+import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useTripStore } from "@/store/tripStore";
+import { DayCard } from "@/components/cards/DayCard";
 
-const HANDLE_H = 6
-const HEADER_H = 52
-const MIN_CARDS_H = 100
-const DEFAULT_H = 320
+const HANDLE_H = 6;
+const HEADER_H = 52;
+const MIN_CARDS_H = 100;
+const DEFAULT_H = 320;
 
 export function ItineraryPanel() {
-  const result = useTripStore((s) => s.result)
+  const result = useTripStore((s) => s.result);
   const itineraryStatus = useTripStore(
-    (s) => s.agents["itinerary"]?.status ?? "idle"
-  )
-  const selectedDay = useTripStore((s) => s.selectedDay)
-  const setSelectedDay = useTripStore((s) => s.setSelectedDay)
+    (s) => s.agents["itinerary"]?.status ?? "idle",
+  );
+  const selectedDay = useTripStore((s) => s.selectedDay);
+  const setSelectedDay = useTripStore((s) => s.setSelectedDay);
 
-  const show = itineraryStatus === "complete" && result && result.itinerary.length > 0
+  const show =
+    itineraryStatus === "complete" && result && result.itinerary.length > 0;
 
-  const [panelH, setPanelH] = useState(DEFAULT_H)
-  const [collapsed, setCollapsed] = useState(false)
-  const [isDragging, setIsDragging] = useState(false)
+  const [panelH, setPanelH] = useState(DEFAULT_H);
+  const [collapsed, setCollapsed] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const dragging = useRef(false)
-  const startY = useRef(0)
-  const startH = useRef(0)
+  const dragging = useRef(false);
+  const startY = useRef(0);
+  const startH = useRef(0);
 
   const onDragStart = (e: React.MouseEvent) => {
-    dragging.current = true
-    setIsDragging(true)
-    startY.current = e.clientY
-    startH.current = panelH
-    e.preventDefault()
-  }
+    dragging.current = true;
+    setIsDragging(true);
+    startY.current = e.clientY;
+    startH.current = panelH;
+    e.preventDefault();
+  };
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
-      if (!dragging.current) return
-      const delta = startY.current - e.clientY
-      setPanelH(Math.min(600, Math.max(MIN_CARDS_H + HANDLE_H + HEADER_H, startH.current + delta)))
-    }
+      if (!dragging.current) return;
+      const delta = startY.current - e.clientY;
+      setPanelH(
+        Math.min(
+          600,
+          Math.max(MIN_CARDS_H + HANDLE_H + HEADER_H, startH.current + delta),
+        ),
+      );
+    };
     const onUp = () => {
-      dragging.current = false
-      setIsDragging(false)
-    }
-    window.addEventListener("mousemove", onMove)
-    window.addEventListener("mouseup", onUp)
+      dragging.current = false;
+      setIsDragging(false);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
     return () => {
-      window.removeEventListener("mousemove", onMove)
-      window.removeEventListener("mouseup", onUp)
-    }
-  }, [])
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, []);
 
-  const totalH = collapsed ? HANDLE_H + HEADER_H : panelH
-  const cardsH = panelH - HANDLE_H - HEADER_H
+  const totalH = collapsed ? HANDLE_H + HEADER_H : panelH;
+  const cardsH = panelH - HANDLE_H - HEADER_H;
 
   return (
     <AnimatePresence>
@@ -139,7 +145,7 @@ export function ItineraryPanel() {
             </button>
           </div>
 
-          {/* Day cards — flex wrap */}
+          {/* Day cards - flex wrap */}
           {!collapsed && (
             <div
               className="flex flex-wrap gap-4 overflow-y-auto px-6 py-4"
@@ -166,5 +172,5 @@ export function ItineraryPanel() {
         </motion.div>
       )}
     </AnimatePresence>
-  )
+  );
 }

@@ -51,7 +51,7 @@
 }
 
 :root {
-  /* Warm editorial palette — overrides shadcn defaults */
+  /* Warm editorial palette - overrides shadcn defaults */
   --background: #FAFAF8;
   --foreground: #1A1614;
   --card: #FFFFFF;

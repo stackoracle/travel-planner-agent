@@ -67,8 +67,8 @@ async def run_itinerary_agent(
         )
 
         prompt = (
-            f"Using this research — destination guide, flight info, accommodation options, "  # noqa: E501
-            f"and weather forecast — create a detailed day-by-day itinerary for "
+            f"Using this research - destination guide, flight info, accommodation options, "  # noqa: E501
+            f"and weather forecast - create a detailed day-by-day itinerary for "
             f"{request.travelers} travellers, {n_days} days in {request.destination}. "
             f"Budget: {request.budget}. Style: {request.travel_style}. "
             f"Day 1 date is {request.departure_date}; increment by one day for each subsequent day. "  # noqa: E501

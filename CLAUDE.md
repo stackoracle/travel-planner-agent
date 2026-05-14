@@ -1,4 +1,4 @@
-# Waypoint — AI Travel Planner Agent · CLAUDE.md
+# Waypoint - AI Travel Planner Agent · CLAUDE.md
 
 > Multi-agent travel planning tool with real-time streaming output.
 > Built as a portfolio project to showcase agentic AI, SSE streaming, parallel tool use, and rich UI.
@@ -19,7 +19,7 @@
 ## What It Does
 
 The user describes a trip: destination, origin, dates, budget, travel style.
-Five agents run — four in parallel, one synthesises after.
+Five agents run - four in parallel, one synthesises after.
 
 | Agent                 | Role                                            | Tools Used        |
 | --------------------- | ----------------------------------------------- | ----------------- |
@@ -279,13 +279,13 @@ AgentName = Literal[
 ]
 
 EventType = Literal[
-    "thinking",     # Agent declared intent — before any I/O
+    "thinking",     # Agent declared intent - before any I/O
     "token",        # Single streaming LLM token
     "tool_call",    # data = tool name + query, shown inline in UI
     "tool_result",  # data = brief summary of tool response
     "complete",     # data = full accumulated output string
     "error",        # data = error message
-    "done",         # System sentinel — stream ends after this
+    "done",         # System sentinel - stream ends after this
 ]
 
 class AgentEvent(BaseModel):
@@ -341,7 +341,7 @@ class TripResult(BaseModel):
 
 ## 3. SSE Event Stream
 
-Wire format — one JSON object per `data:` line, separated by `\n\n`:
+Wire format - one JSON object per `data:` line, separated by `\n\n`:
 
 ```
 data: {"agent": "destination", "type": "thinking",    "data": "Researching Tokyo..."}
@@ -363,7 +363,7 @@ data: {"agent": "system",      "type": "done",        "data": ""}
 
 ---
 
-## 4. API Routes — `api/routes.py`
+## 4. API Routes - `api/routes.py`
 
 ```python
 POST /api/plan              # TripRequest → { job_id: str }
@@ -373,7 +373,7 @@ GET  /api/result/{job_id}   # → TripResult
 
 ---
 
-## 5. Tools — `core/tools.py`
+## 5. Tools - `core/tools.py`
 
 ```python
 # All external API calls live here.
@@ -422,7 +422,7 @@ async def _exchangerate_convert(amount: float, frm: str, to: str) -> float: ...
 
 ---
 
-## 6. Orchestrator — `core/orchestrator.py`
+## 6. Orchestrator - `core/orchestrator.py`
 
 ```python
 async def run_trip_planning(
@@ -430,7 +430,7 @@ async def run_trip_planning(
     job_id: str,
     queue: asyncio.Queue[AgentEvent],
 ) -> None:
-    # Step 1 — four agents in parallel
+    # Step 1 - four agents in parallel
     results = await asyncio.gather(
         run_destination_agent(request, queue),
         run_flight_agent(request, queue),
@@ -438,26 +438,26 @@ async def run_trip_planning(
         run_weather_agent(request, queue),
         return_exceptions=True,
     )
-    # Step 2 — itinerary after all complete
+    # Step 2 - itinerary after all complete
     await run_itinerary_agent(request, results, queue)
-    # Step 3 — close stream
+    # Step 3 - close stream
     await queue.put(AgentEvent(agent="system", type="done", data=""))
 ```
 
 ---
 
-## 7. Agent Contracts — `agents/base.py`
+## 7. Agent Contracts - `agents/base.py`
 
 Every agent must:
 
 * Accept `request: TripRequest` and `queue: asyncio.Queue[AgentEvent]`
-* Use `AgentEvent` Pydantic model for all emitted events — never raw dicts
+* Use `AgentEvent` Pydantic model for all emitted events - never raw dicts
 * Emit `thinking` before any tool call or LLM call
-* Call external APIs only via `core/tools.py` wrappers — never inline
+* Call external APIs only via `core/tools.py` wrappers - never inline
 * Stream LLM output token-by-token via `token` events (OpenAI `stream=True`)
 * Emit `complete` with full accumulated output when done
 * Catch all exceptions → emit `error` event + `logger.exception`
-* All functions fully type-annotated — `mypy --strict` must pass
+* All functions fully type-annotated - `mypy --strict` must pass
 
 ---
 
@@ -484,7 +484,7 @@ Every agent must:
 ### `weather_agent`
 
 * Geocode destination → `run_weather_forecast` → currency convert if needed
-* No LLM for data retrieval — direct API calls only
+* No LLM for data retrieval - direct API calls only
 * LLM used only to produce packing advice from raw forecast
 * Output: day-by-day forecast summary + practical packing list
 * Prompt: *"Given this weather forecast for {destination} from {departure_date} to {return_date}: {forecast_json}. Write a 2-paragraph weather summary and a practical packing list for a {travel_style} trip."*
@@ -493,10 +493,10 @@ Every agent must:
 
 * Receives all four agent output strings as context
 * Runs only after all four emit `complete`
-* Produces JSON parseable into `list[DayPlan]` — one entry per travel day
+* Produces JSON parseable into `list[DayPlan]` - one entry per travel day
 * Also produces `total_estimated_cost`, `packing_list`, `map_query`
-* Prompt: *"Using this research — destination guide, flight info, accommodation options, and weather forecast — create a detailed day-by-day itinerary for {travelers} travellers, {n} days in {destination}. Budget: {budget}. Style: {travel_style}. For each day include morning/afternoon/evening activities, where to stay, and estimated daily cost in {currency}. Respond only with valid JSON matching the DayPlan schema."*
-* Parse LLM JSON output into `list[DayPlan]` — validate with Pydantic
+* Prompt: *"Using this research - destination guide, flight info, accommodation options, and weather forecast - create a detailed day-by-day itinerary for {travelers} travellers, {n} days in {destination}. Budget: {budget}. Style: {travel_style}. For each day include morning/afternoon/evening activities, where to stay, and estimated daily cost in {currency}. Respond only with valid JSON matching the DayPlan schema."*
+* Parse LLM JSON output into `list[DayPlan]` - validate with Pydantic
 
 ---
 
@@ -523,7 +523,7 @@ export default nextConfig
 
 ---
 
-## 10. Zustand Store — `store/tripStore.ts`
+## 10. Zustand Store - `store/tripStore.ts`
 
 ```typescript
 type AgentStatus = 'idle' | 'thinking' | 'active' | 'complete' | 'error'
@@ -564,7 +564,7 @@ type Store = {
 
 ---
 
-## 11. SSE Hook — `hooks/useAgentStream.ts`
+## 11. SSE Hook - `hooks/useAgentStream.ts`
 
 ```typescript
 export function useAgentStream(jobId: string | null) {
@@ -591,7 +591,7 @@ export function useAgentStream(jobId: string | null) {
 
 Not a dark dashboard. Not a SaaS product.
 Think Condé Nast Traveler meets a live intelligence feed.
-Light, airy, generous — a single warm terracotta accent, rich serif display type for the destination name.
+Light, airy, generous - a single warm terracotta accent, rich serif display type for the destination name.
 The map is the hero. Everything else frames it.
 
 ### Colors
@@ -602,7 +602,7 @@ The map is the hero. Everything else frames it.
 --bg-muted:        #F4F1EC;   /* card and input backgrounds */
 --border:          #E8E2D9;
 
---accent:          #E8652A;   /* terracotta — the single bold color */
+--accent:          #E8652A;   /* terracotta - the single bold color */
 --accent-light:    #FDF0EA;   /* tint for hover/selected states */
 --accent-dark:     #B84D1A;   /* darker for pressed states */
 
@@ -610,7 +610,7 @@ The map is the hero. Everything else frames it.
 --text-secondary:  #6B6459;
 --text-muted:      #A89E94;
 
-/* Agent identity — warm, distinct */
+/* Agent identity - warm, distinct */
 --agent-destination: #E8652A;   /* terracotta */
 --agent-flight:      #2A6EE8;   /* sky blue */
 --agent-hotel:       #2AAE8C;   /* teal */
@@ -621,8 +621,8 @@ The map is the hero. Everything else frames it.
 ### Typography
 
 ```
-Display (destination name, hero):   "Playfair Display" — serif, editorial
-UI labels, body, inputs:            "DM Sans" — clean, warm, readable
+Display (destination name, hero):   "Playfair Display" - serif, editorial
+UI labels, body, inputs:            "DM Sans" - clean, warm, readable
 Tool calls, timestamps, monospace:  "JetBrains Mono"
 ```
 
@@ -637,14 +637,14 @@ import { Playfair_Display, DM_Sans, JetBrains_Mono } from 'next/font/google'
 * Itinerary day cards: stagger reveal left-to-right, 60ms per card
 * Itinerary panel: `y: 40 → 0` + `opacity: 0 → 1` over 400ms when synthesis completes
 * Overall progress bar: smooth width transition as each agent completes
-* Streaming text: append with no animation — let content flow naturally
+* Streaming text: append with no animation - let content flow naturally
 * Landing page: destination name large serif preview updates live as user types
 
 ---
 
 ## 13. Pages
 
-### `app/page.tsx` — Landing / Trip Input
+### `app/page.tsx` - Landing / Trip Input
 
 Full viewport, centered content, no scroll needed.
 
@@ -684,11 +684,11 @@ Full viewport, centered content, no scroll needed.
 
 * Background: `--bg-base` with a faint large watermark of a destination photo (CSS `opacity: 0.04`)
 * Destination input: prominent, Playfair Display as placeholder text
-* Budget + style: radio tile cards — `--bg-muted` default, `--accent-light` border + background when selected
+* Budget + style: radio tile cards - `--bg-muted` default, `--accent-light` border + background when selected
 * Button: `--accent` fill, white text, 4px radius, full-width on mobile
 * On submit → POST `/api/plan` → redirect to `/trip/[jobId]`
 
-### `app/trip/[jobId]/page.tsx` — Live Planning Dashboard
+### `app/trip/[jobId]/page.tsx` - Live Planning Dashboard
 
 Three-column layout + bottom reveal. Full viewport, no page scroll.
 
@@ -737,20 +737,20 @@ Three-column layout + bottom reveal. Full viewport, no page scroll.
 └────────────────────────────────────────────────────────────────────┘
 ```
 
-**Left column — Agent Status Panel (240px)**
+**Left column - Agent Status Panel (240px)**
 
 * One row per agent: `StatusDot` + name (colored) + status text + elapsed timer
 * Tool call count when > 0: small muted label `3 searches`
-* Overall `Progress` bar at bottom — advances 20% per completed agent
-* No scroll — fixed height
+* Overall `Progress` bar at bottom - advances 20% per completed agent
+* No scroll - fixed height
 
-**Center — Map Panel (flex-1)**
+**Center - Map Panel (flex-1)**
 
 * Google Maps embed: `<iframe src="https://www.google.com/maps/embed/v1/place?key={KEY}&q={map_query}" />`
 * Fills panel fully, no padding, no border
 * `map_query` set from `TripResult.map_query` once job completes; defaults to destination string while loading
 
-**Right column — Live Feed (320px)**
+**Right column - Live Feed (320px)**
 
 * `AgentCard` per agent, appears via `AnimatePresence` on first event
 * Stack vertically, full column scrolls with shadcn `ScrollArea`
@@ -758,11 +758,11 @@ Three-column layout + bottom reveal. Full viewport, no page scroll.
 * Tool call lines: `> query string` in JetBrains Mono, `--text-muted`
 * Body max-height 200px, overflows with inner `ScrollArea`
 
-**Bottom — Itinerary Panel**
+**Bottom - Itinerary Panel**
 
 * `display: none` until `itinerary_agent` emits `complete`
 * Animates in with Framer Motion
-* Horizontal scroll of `DayCard` components — one per travel day
+* Horizontal scroll of `DayCard` components - one per travel day
 * Fixed height ~280px
 
 ---
@@ -774,7 +774,7 @@ Three-column layout + bottom reveal. Full viewport, no page scroll.
 ```tsx
 // Left border: 3px solid var(--agent-{name})
 // Header: StatusDot + agent name in agent color + elapsed timer (right-aligned)
-// Body: StreamingText — tokens append progressively
+// Body: StreamingText - tokens append progressively
 // Tool call rows: "> query" in JetBrains Mono, --text-muted, 12px
 // Max body height: 200px, inner ScrollArea for overflow
 // Appears via AnimatePresence: y:16→0, opacity:0→1
@@ -785,8 +785,8 @@ Three-column layout + bottom reveal. Full viewport, no page scroll.
 
 ```tsx
 // Fixed width: 240px
-// Header: "Day {n} · {date}" — Playfair Display 16px
-// Three sections: Morning / Afternoon / Evening — each with emoji + text
+// Header: "Day {n} · {date}" - Playfair Display 16px
+// Three sections: Morning / Afternoon / Evening - each with emoji + text
 // Footer: accommodation name + estimated daily cost in accent color
 // Weather icon for the day (from packing_list or weather summary)
 // --bg-muted background, --border border, 8px radius
@@ -832,7 +832,7 @@ Three-column layout + bottom reveal. Full viewport, no page scroll.
 ### `StreamingText.tsx`
 
 ```tsx
-// Uses useRef to append tokens to a DOM text node — no React re-render per token
+// Uses useRef to append tokens to a DOM text node - no React re-render per token
 // Blinking cursor (|) appended while agent status is active
 // Cursor removed on complete
 // Font: DM Sans 14px for prose, JetBrains Mono for tool output
@@ -840,7 +840,7 @@ Three-column layout + bottom reveal. Full viewport, no page scroll.
 
 ---
 
-## 15. API Client — `lib/api.ts`
+## 15. API Client - `lib/api.ts`
 
 ```typescript
 export const startTrip = async (
@@ -856,51 +856,51 @@ export const getResult = async (
 
 ## 16. Build Order
 
-### Step 1 — Backend Core
+### Step 1 - Backend Core
 
 1. Create `backend/` structure
-2. `pyproject.toml` — Ruff + Mypy config
+2. `pyproject.toml` - Ruff + Mypy config
 3. All `schemas/` Pydantic models
-4. `main.py` — FastAPI + CORS + Loguru
-5. `core/job_store.py` — uuid4 in-memory registry
-6. `core/tools.py` — all four tool wrappers with event emission
-7. `core/streaming.py` — SSE formatter
-8. `api/routes.py` — 3 endpoints
-9. `agents/base.py` — abstract base, type contracts
-10. `uv run python lint.py` — fix all errors
+4. `main.py` - FastAPI + CORS + Loguru
+5. `core/job_store.py` - uuid4 in-memory registry
+6. `core/tools.py` - all four tool wrappers with event emission
+7. `core/streaming.py` - SSE formatter
+8. `api/routes.py` - 3 endpoints
+9. `agents/base.py` - abstract base, type contracts
+10. `uv run python lint.py` - fix all errors
 
-### Step 2 — Agents
+### Step 2 - Agents
 
-1. `weather_agent` first — simplest: geocode → forecast → LLM packing advice
-2. `destination_agent` — Tavily × 3, stream output
-3. `hotel_agent` — Tavily × 2, stream output
-4. `flight_agent` — Tavily × 2, stream output
-5. `core/orchestrator.py` — `asyncio.gather` all four
-6. `itinerary_agent` — receives all outputs, produces `list[DayPlan]` JSON, Pydantic-validated
+1. `weather_agent` first - simplest: geocode → forecast → LLM packing advice
+2. `destination_agent` - Tavily × 3, stream output
+3. `hotel_agent` - Tavily × 2, stream output
+4. `flight_agent` - Tavily × 2, stream output
+5. `core/orchestrator.py` - `asyncio.gather` all four
+6. `itinerary_agent` - receives all outputs, produces `list[DayPlan]` JSON, Pydantic-validated
 7. `uv run python lint.py`
 8. End-to-end test: POST → full SSE stream → `TripResult` with structured itinerary
 
-### Step 3 — Frontend Foundation
+### Step 3 - Frontend Foundation
 
 1. Next.js + Turbopack + shadcn init
 2. All shadcn components + Zustand + Framer Motion
-3. Tailwind CSS variables — warm editorial palette
+3. Tailwind CSS variables - warm editorial palette
 4. `store/tripStore.ts`
 5. `hooks/useAgentStream.ts`
 
-### Step 4 — UI Pages
+### Step 4 - UI Pages
 
-1. `app/page.tsx` — trip input form, radio tile cards for budget + style
-2. Three-column dashboard shell — get layout right before adding content
+1. `app/page.tsx` - trip input form, radio tile cards for budget + style
+2. Three-column dashboard shell - get layout right before adding content
 3. `StatusDot` + `AgentBadge` + `StreamingText` shared components
-4. `AgentCard` — wired to Zustand, live token append, tool call rows
-5. Left status panel — agent rows + overall progress bar
+4. `AgentCard` - wired to Zustand, live token append, tool call rows
+5. Left status panel - agent rows + overall progress bar
 6. Google Maps embed panel
-7. `WeatherCard`, `FlightCard`, `HotelCard` — rendered inside agent cards
+7. `WeatherCard`, `FlightCard`, `HotelCard` - rendered inside agent cards
 8. `DayCard` + itinerary horizontal scroll panel
 9. `AnimatePresence` on itinerary panel reveal
 
-### Step 5 — Polish
+### Step 5 - Polish
 
 1. Framer Motion: agent card stagger, itinerary reveal, tool call border pulse
 2. `StreamingText` cursor blink while active, disappears on complete
@@ -917,25 +917,25 @@ export const getResult = async (
 
 **Backend**
 
-* `asyncio.gather` for the four parallel agents — never sequential
+* `asyncio.gather` for the four parallel agents - never sequential
 * Every agent emits `thinking` before any tool call or LLM call
 * All backend code passes `uv run python lint.py` before commit
-* `AgentEvent` Pydantic model for every SSE event — never raw dicts
-* All external API calls go through `core/tools.py` wrappers — never inline in agents
+* `AgentEvent` Pydantic model for every SSE event - never raw dicts
+* All external API calls go through `core/tools.py` wrappers - never inline in agents
 * Tool wrappers always emit `tool_call` before calling and `tool_result` after
-* SSE stays open until `system.done` — never close early
+* SSE stays open until `system.done` - never close early
 * `itinerary_agent` starts only after all four parallel agents emit `complete`
-* `itinerary_agent` output is Pydantic-validated into `list[DayPlan]` — never stored as raw string
-* Token streaming uses OpenAI `stream=True` — never batch completion
+* `itinerary_agent` output is Pydantic-validated into `list[DayPlan]` - never stored as raw string
+* Token streaming uses OpenAI `stream=True` - never batch completion
 
 **Frontend**
 
-* No page-level scroll on the dashboard — columns scroll internally via shadcn `ScrollArea`
-* `StreamingText` uses `useRef` for token append — no React state re-render per token
-* Google Maps embed is a plain `<iframe>` — no Maps JS SDK, no additional bundle cost
+* No page-level scroll on the dashboard - columns scroll internally via shadcn `ScrollArea`
+* `StreamingText` uses `useRef` for token append - no React state re-render per token
+* Google Maps embed is a plain `<iframe>` - no Maps JS SDK, no additional bundle cost
 * Itinerary panel starts hidden; `AnimatePresence` handles the reveal
-* Agent cards appear via `AnimatePresence` — not pre-rendered as empty placeholders
-* Use shadcn primitives — do not rebuild `ScrollArea`, `Progress`, `Select`, `Badge`, `Tabs`
+* Agent cards appear via `AnimatePresence` - not pre-rendered as empty placeholders
+* Use shadcn primitives - do not rebuild `ScrollArea`, `Progress`, `Select`, `Badge`, `Tabs`
 * Turbopack stays enabled in `next.config.ts`
-* Warm editorial palette only — no dark mode, no additional accent colors
-* Currency formatted via `Intl.NumberFormat` — never hardcoded symbol strings
+* Warm editorial palette only - no dark mode, no additional accent colors
+* Currency formatted via `Intl.NumberFormat` - never hardcoded symbol strings

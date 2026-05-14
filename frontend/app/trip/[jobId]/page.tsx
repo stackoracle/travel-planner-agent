@@ -1,29 +1,30 @@
-"use client"
+"use client";
 
-import { use } from "react"
-import Link from "next/link"
-import { useAgentStream } from "@/hooks/useAgentStream"
-import { useTripStore } from "@/store/tripStore"
-import { AgentStatusPanel } from "@/components/dashboard/AgentStatusPanel"
-import { MapPanel } from "@/components/dashboard/MapPanel"
-import { LiveFeedPanel } from "@/components/dashboard/LiveFeedPanel"
-import { ItineraryPanel } from "@/components/dashboard/ItineraryPanel"
+import { use } from "react";
+import Link from "next/link";
+import { useAgentStream } from "@/hooks/useAgentStream";
+import { useTripStore } from "@/store/tripStore";
+import { AgentStatusPanel } from "@/components/dashboard/AgentStatusPanel";
+import { MapPanel } from "@/components/dashboard/MapPanel";
+import { LiveFeedPanel } from "@/components/dashboard/LiveFeedPanel";
+import { ItineraryPanel } from "@/components/dashboard/ItineraryPanel";
 
 interface Props {
-  params: Promise<{ jobId: string }>
+  params: Promise<{ jobId: string }>;
 }
 
 export default function TripPage({ params }: Props) {
-  const { jobId } = use(params)
-  useAgentStream(jobId)
+  const { jobId } = use(params);
+  useAgentStream(jobId);
 
-  const request = useTripStore((s) => s.request)
-  const result = useTripStore((s) => s.result)
+  const request = useTripStore((s) => s.request);
+  const result = useTripStore((s) => s.result);
 
-  const destination = result?.destination ?? request?.destination ?? "Your trip"
-  const origin = request?.origin ?? ""
-  const dep = request?.departure_date ?? ""
-  const ret = request?.return_date ?? ""
+  const destination =
+    result?.destination ?? request?.destination ?? "Your trip";
+  const origin = request?.origin ?? "";
+  const dep = request?.departure_date ?? "";
+  const ret = request?.return_date ?? "";
 
   const depStr = dep
     ? new Date(dep + "T00:00:00").toLocaleDateString("en-GB", {
@@ -31,14 +32,14 @@ export default function TripPage({ params }: Props) {
         month: "short",
         year: "numeric",
       })
-    : ""
+    : "";
   const retStr = ret
     ? new Date(ret + "T00:00:00").toLocaleDateString("en-GB", {
         day: "numeric",
         month: "short",
       })
-    : ""
-  const dateRange = depStr && retStr ? `${depStr} – ${retStr}` : depStr
+    : "";
+  const dateRange = depStr && retStr ? `${depStr} – ${retStr}` : depStr;
 
   return (
     <div
@@ -78,7 +79,9 @@ export default function TripPage({ params }: Props) {
         {origin && (
           <>
             <span style={{ color: "#E8E2D9" }}>·</span>
-            <span style={{ fontSize: 13, color: "#6B6459" }}>from {origin}</span>
+            <span style={{ fontSize: 13, color: "#6B6459" }}>
+              from {origin}
+            </span>
           </>
         )}
         {dateRange && (
@@ -116,24 +119,27 @@ export default function TripPage({ params }: Props) {
 
       {/* Three-column body */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left — Agent status (240px) */}
+        {/* Left - Agent status (240px) */}
         <div className="h-full" style={{ width: 240, flexShrink: 0 }}>
           <AgentStatusPanel />
         </div>
 
-        {/* Center — Map (flex-1) */}
+        {/* Center - Map (flex-1) */}
         <div className="flex-1 overflow-hidden">
           <MapPanel defaultQuery={destination} />
         </div>
 
-        {/* Right — Live feed (320px) */}
-        <div className="h-full overflow-hidden" style={{ width: 320, flexShrink: 0 }}>
+        {/* Right - Live feed (320px) */}
+        <div
+          className="h-full overflow-hidden"
+          style={{ width: 320, flexShrink: 0 }}
+        >
           <LiveFeedPanel />
         </div>
       </div>
 
-      {/* Bottom — Itinerary reveal */}
+      {/* Bottom - Itinerary reveal */}
       <ItineraryPanel />
     </div>
-  )
+  );
 }

@@ -1,14 +1,14 @@
-"use client"
+"use client";
 
-import { useEffect, useRef, useState } from "react"
-import { createPortal } from "react-dom"
-import { motion } from "framer-motion"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
-import { AgentBadge } from "@/components/shared/AgentBadge"
-import { StatusDot } from "@/components/shared/StatusDot"
-import { StreamingText } from "@/components/shared/StreamingText"
-import { useTripStore } from "@/store/tripStore"
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { motion } from "framer-motion";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { AgentBadge } from "@/components/shared/AgentBadge";
+import { StatusDot } from "@/components/shared/StatusDot";
+import { StreamingText } from "@/components/shared/StreamingText";
+import { useTripStore } from "@/store/tripStore";
 
 const AGENT_COLORS: Record<string, string> = {
   destination: "#E8652A",
@@ -16,59 +16,69 @@ const AGENT_COLORS: Record<string, string> = {
   hotel: "#2AAE8C",
   weather: "#C49A00",
   itinerary: "#8B3A8B",
-}
+};
 
 interface Props {
-  agent: string
+  agent: string;
 }
 
 export function AgentCard({ agent }: Props) {
-  // Each card subscribes ONLY to its own agent slice — other agents' tokens don't trigger re-renders here
-  const state = useTripStore((s) => s.agents[agent])
-  const color = AGENT_COLORS[agent] ?? "#A89E94"
+  // Each card subscribes ONLY to its own agent slice - other agents' tokens don't trigger re-renders here
+  const state = useTripStore((s) => s.agents[agent]);
+  const color = AGENT_COLORS[agent] ?? "#A89E94";
 
-  const [elapsed, setElapsed] = useState(0)
-  const [pulseBorder, setPulseBorder] = useState(false)
-  const [fullscreen, setFullscreen] = useState(false)
-  const prevToolCount = useRef(0)
-  const bodyRef = useRef<HTMLDivElement>(null)
+  const [elapsed, setElapsed] = useState(0);
+  const [pulseBorder, setPulseBorder] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+  const prevToolCount = useRef(0);
+  const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!state?.startedAt || state.status === "complete" || state.status === "error") return
-    const id = setInterval(() => setElapsed(Date.now() - (state.startedAt ?? 0)), 1000)
-    return () => clearInterval(id)
-  }, [state?.startedAt, state?.status])
+    if (
+      !state?.startedAt ||
+      state.status === "complete" ||
+      state.status === "error"
+    )
+      return;
+    const id = setInterval(
+      () => setElapsed(Date.now() - (state.startedAt ?? 0)),
+      1000,
+    );
+    return () => clearInterval(id);
+  }, [state?.startedAt, state?.status]);
 
   useEffect(() => {
     if ((state?.toolCalls.length ?? 0) > prevToolCount.current) {
-      prevToolCount.current = state?.toolCalls.length ?? 0
-      setPulseBorder(true)
-      const id = setTimeout(() => setPulseBorder(false), 300)
-      return () => clearTimeout(id)
+      prevToolCount.current = state?.toolCalls.length ?? 0;
+      setPulseBorder(true);
+      const id = setTimeout(() => setPulseBorder(false), 300);
+      return () => clearTimeout(id);
     }
-  }, [state?.toolCalls.length])
+  }, [state?.toolCalls.length]);
 
   // Auto-scroll card body to latest token
   useEffect(() => {
     if (bodyRef.current) {
-      bodyRef.current.scrollTop = bodyRef.current.scrollHeight
+      bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
     }
-  }, [state?.output, state?.toolCalls.length])
+  }, [state?.output, state?.toolCalls.length]);
 
   // ESC closes fullscreen
   useEffect(() => {
-    if (!fullscreen) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setFullscreen(false) }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [fullscreen])
+    if (!fullscreen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFullscreen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [fullscreen]);
 
-  if (!state) return null
+  if (!state) return null;
 
   const elapsedStr =
     state.startedAt && state.status !== "idle"
       ? `${Math.floor(elapsed / 1000)}s`
-      : ""
+      : "";
 
   return (
     <>
@@ -109,7 +119,7 @@ export function AgentCard({ agent }: Props) {
                 {elapsedStr}
               </span>
             )}
-            {/* Fullscreen button — only shown when there's content */}
+            {/* Fullscreen button - only shown when there's content */}
             {state.output && (
               <button
                 onClick={() => setFullscreen(true)}
@@ -129,7 +139,7 @@ export function AgentCard({ agent }: Props) {
           </div>
         </div>
 
-        {/* Scrollable body — tool calls + streaming output, capped at 200px */}
+        {/* Scrollable body - tool calls + streaming output, capped at 200px */}
         <div
           ref={bodyRef}
           style={{
@@ -165,7 +175,7 @@ export function AgentCard({ agent }: Props) {
         </div>
       </motion.div>
 
-      {/* Fullscreen overlay — rendered into document.body via portal */}
+      {/* Fullscreen overlay - rendered into document.body via portal */}
       {fullscreen &&
         typeof document !== "undefined" &&
         createPortal(
@@ -260,8 +270,8 @@ export function AgentCard({ agent }: Props) {
               </div>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
     </>
-  )
+  );
 }
