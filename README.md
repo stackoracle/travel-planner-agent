@@ -8,7 +8,15 @@ Built as a portfolio project to demonstrate agentic AI architecture, SSE streami
 
 ## Demo
 
-![Dashboard showing live agent feed, interactive map, and itinerary cards](.github/demo.png)
+<p align="center">
+  <img src="images/thumb.png" width="100%" alt="Waypoint trip input form" />
+</p>
+
+<p align="center">
+  <img src="images/running.png" width="49%" alt="Five agents streaming in parallel" />
+  &nbsp;
+  <img src="images/ending.png" width="49%" alt="Completed itinerary with day cards" />
+</p>
 
 ---
 
