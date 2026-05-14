@@ -52,7 +52,9 @@ async def run_itinerary_agent(
         schema_example = (
             '{"itinerary": [{"day": 1, "date": "2025-09-01", "morning": "...", '
             '"afternoon": "...", "evening": "...", "accommodation": "...", '
-            '"estimated_cost": "~€80/person"}], '
+            '"estimated_cost": "~€80/person", '
+            '"weather": "28°C, partly cloudy", '
+            '"locations": ["Tsukiji Fish Market", "Senso-ji Temple", "Shinjuku"]}], '  # noqa: E501
             '"total_estimated_cost": "~€1200 per person", '
             '"packing_list": ["item1", "item2"], '
             f'"map_query": "{request.destination}"}}'
@@ -64,7 +66,10 @@ async def run_itinerary_agent(
             f"{request.travelers} travellers, {n_days} days in {request.destination}. "
             f"Budget: {request.budget}. Style: {request.travel_style}. "
             f"For each day include morning/afternoon/evening activities, where to stay, "  # noqa: E501
-            f"and estimated daily cost in {request.currency}.\n\n"
+            f"estimated daily cost in {request.currency}, "
+            f"a brief 'weather' note (temperature + conditions for that day from the forecast), "  # noqa: E501
+            f"and a 'locations' array of exactly 3 specific geocodable place names "
+            f"visited that day (one per time slot: morning, afternoon, evening).\n\n"
             f"Respond ONLY with a valid JSON object (no markdown, no code fences) "
             f"exactly matching this structure:\n{schema_example}\n\n"
             f"DESTINATION GUIDE:\n{destination_out}\n\n"

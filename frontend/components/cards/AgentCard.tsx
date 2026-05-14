@@ -5,7 +5,6 @@ import { createPortal } from "react-dom"
 import { motion } from "framer-motion"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { AgentBadge } from "@/components/shared/AgentBadge"
 import { StatusDot } from "@/components/shared/StatusDot"
 import { StreamingText } from "@/components/shared/StreamingText"
@@ -32,6 +31,7 @@ export function AgentCard({ agent }: Props) {
   const [pulseBorder, setPulseBorder] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
   const prevToolCount = useRef(0)
+  const bodyRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!state?.startedAt || state.status === "complete" || state.status === "error") return
@@ -47,6 +47,13 @@ export function AgentCard({ agent }: Props) {
       return () => clearTimeout(id)
     }
   }, [state?.toolCalls.length])
+
+  // Auto-scroll card body to latest token
+  useEffect(() => {
+    if (bodyRef.current) {
+      bodyRef.current.scrollTop = bodyRef.current.scrollHeight
+    }
+  }, [state?.output, state?.toolCalls.length])
 
   // ESC closes fullscreen
   useEffect(() => {
@@ -123,7 +130,15 @@ export function AgentCard({ agent }: Props) {
         </div>
 
         {/* Scrollable body — tool calls + streaming output, capped at 200px */}
-        <ScrollArea style={{ maxHeight: 200 }}>
+        <div
+          ref={bodyRef}
+          style={{
+            maxHeight: 200,
+            overflowY: "auto",
+            scrollbarWidth: "thin",
+            scrollbarColor: "#E8E2D9 transparent",
+          }}
+        >
           <div className="px-3 py-2 space-y-1">
             {state.toolCalls.map((call, i) => (
               <p
@@ -147,7 +162,7 @@ export function AgentCard({ agent }: Props) {
               </div>
             )}
           </div>
-        </ScrollArea>
+        </div>
       </motion.div>
 
       {/* Fullscreen overlay — rendered into document.body via portal */}

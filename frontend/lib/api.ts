@@ -19,6 +19,8 @@ export interface DayPlan {
   evening: string
   accommodation: string
   estimated_cost: string
+  weather?: string
+  locations?: string[]
 }
 
 export interface TripResult {

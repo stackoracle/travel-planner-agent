@@ -26,6 +26,18 @@ export function LiveFeedPanel() {
     }
   }, [activeAgents.length])
 
+  // Auto-scroll outer panel as card content grows during streaming
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const observer = new MutationObserver(() => {
+      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80
+      if (nearBottom) el.scrollTop = el.scrollHeight
+    })
+    observer.observe(el, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <div
       className="flex flex-col h-full"

@@ -1,170 +1,197 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useTripStore } from "@/store/tripStore"
-import type { DayPlan } from "@/lib/api"
 
-interface Coords {
-  lat: number
-  lon: number
-}
+type L = typeof import("leaflet")
 
 interface Props {
   defaultQuery: string
 }
 
-function DayDetailOverlay({
-  plan,
-  onClose,
-}: {
-  plan: DayPlan
-  onClose: () => void
-}) {
-  const dateStr = new Date(plan.date + "T00:00:00").toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-  })
-
-  return (
-    <div
-      className="absolute left-4 top-4 bottom-4 flex flex-col"
-      style={{
-        width: 264,
-        backgroundColor: "rgba(255,255,255,0.96)",
-        borderRadius: 10,
-        border: "1px solid #E8E2D9",
-        boxShadow: "0 4px 20px rgba(0,0,0,0.14)",
-        overflow: "hidden",
-        zIndex: 10,
-      }}
-    >
-      {/* Overlay header */}
-      <div
-        className="px-4 py-3 flex items-center justify-between shrink-0"
-        style={{ borderBottom: "1px solid #E8E2D9" }}
-      >
-        <span
-          style={{
-            fontFamily: "var(--font-playfair)",
-            fontSize: 15,
-            fontWeight: 600,
-            color: "#1A1614",
-          }}
-        >
-          Day {plan.day} · {dateStr}
-        </span>
-        <button
-          onClick={onClose}
-          style={{
-            color: "#A89E94",
-            fontSize: 15,
-            lineHeight: 1,
-            cursor: "pointer",
-            padding: "2px 6px",
-          }}
-        >
-          ✕
-        </button>
-      </div>
-
-      {/* Sections */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
-        <OverlaySection emoji="☀️" label="Morning" text={plan.morning} />
-        <OverlaySection emoji="🌤️" label="Afternoon" text={plan.afternoon} />
-        <OverlaySection emoji="🌙" label="Evening" text={plan.evening} />
-      </div>
-
-      {/* Footer */}
-      <div
-        className="px-4 py-2 shrink-0"
-        style={{ borderTop: "1px solid #E8E2D9", backgroundColor: "#FAFAF8" }}
-      >
-        <p style={{ fontSize: 12, color: "#6B6459" }}>{plan.accommodation}</p>
-        <p style={{ fontSize: 13, fontWeight: 600, color: "#E8652A" }}>
-          {plan.estimated_cost}
-        </p>
-      </div>
-    </div>
-  )
-}
-
-function OverlaySection({
-  emoji,
-  label,
-  text,
-}: {
-  emoji: string
-  label: string
-  text: string
-}) {
-  return (
-    <div>
-      <p
-        style={{
-          fontSize: 10,
-          color: "#A89E94",
-          fontWeight: 600,
-          letterSpacing: "0.06em",
-          textTransform: "uppercase",
-        }}
-      >
-        {emoji} {label}
-      </p>
-      <p style={{ fontSize: 12, color: "#1A1614", marginTop: 3, lineHeight: 1.65 }}>
-        {text}
-      </p>
-    </div>
-  )
-}
-
 export function MapPanel({ defaultQuery }: Props) {
   const result = useTripStore((s) => s.result)
   const selectedDay = useTripStore((s) => s.selectedDay)
-  const setSelectedDay = useTripStore((s) => s.setSelectedDay)
-  const [coords, setCoords] = useState<Coords | null>(null)
+
+  const containerRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<import("leaflet").Map | null>(null)
+  const markersRef = useRef<import("leaflet").Marker[]>([])
+  const polylineRef = useRef<import("leaflet").Polyline | null>(null)
+  const destMarkerRef = useRef<import("leaflet").Marker | null>(null)
+  const [leaflet, setLeaflet] = useState<L | null>(null)
 
   const destination = result?.map_query ?? defaultQuery
-  const dayPlan = result?.itinerary.find((d) => d.day === selectedDay) ?? null
 
+  // Load Leaflet once (browser only)
   useEffect(() => {
-    if (!destination) return
-    const url =
-      `https://nominatim.openstreetmap.org/search` +
-      `?q=${encodeURIComponent(destination)}&format=json&limit=1`
-    fetch(url, {
-      headers: { "User-Agent": "Waypoint-Travel-Planner/1.0" },
+    import("leaflet").then(setLeaflet)
+  }, [])
+
+  // Initialise map when Leaflet is ready
+  useEffect(() => {
+    if (!leaflet || !containerRef.current || mapRef.current) return
+
+    const map = leaflet.map(containerRef.current, {
+      center: [35.68, 139.69],
+      zoom: 11,
+      zoomControl: true,
     })
+
+    leaflet
+      .tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19,
+      })
+      .addTo(map)
+
+    mapRef.current = map
+
+    return () => {
+      map.remove()
+      mapRef.current = null
+    }
+  }, [leaflet])
+
+  // Geocode destination → center map + pin
+  useEffect(() => {
+    if (!leaflet || !mapRef.current || !destination) return
+    const controller = new AbortController()
+
+    fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(destination)}&format=json&limit=1`,
+      {
+        signal: controller.signal,
+        headers: { "User-Agent": "Waypoint-Travel-Planner/1.0" },
+      }
+    )
       .then((r) => r.json())
       .then((data: Array<{ lat: string; lon: string }>) => {
-        if (data[0]) {
-          setCoords({ lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) })
+        if (!data[0] || !mapRef.current || !leaflet) return
+        const lat = parseFloat(data[0].lat)
+        const lon = parseFloat(data[0].lon)
+
+        destMarkerRef.current?.remove()
+        const icon = leaflet.divIcon({
+          html: `<div style="background:#E8652A;color:white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:13px;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)">📍</div>`,
+          className: "",
+          iconSize: [22, 22],
+          iconAnchor: [11, 11],
+        })
+        destMarkerRef.current = leaflet
+          .marker([lat, lon], { icon })
+          .bindPopup(`<strong>${destination}</strong>`)
+          .addTo(mapRef.current!)
+
+        if (!selectedDay) {
+          mapRef.current!.setView([lat, lon], 12)
         }
       })
       .catch(() => {})
-  }, [destination])
 
-  const osmSrc = coords
-    ? `https://www.openstreetmap.org/export/embed.html` +
-      `?bbox=${coords.lon - 0.15},${coords.lat - 0.15},` +
-      `${coords.lon + 0.15},${coords.lat + 0.15}` +
-      `&layer=mapnik&marker=${coords.lat},${coords.lon}`
-    : null
+    return () => controller.abort()
+    // selectedDay intentionally omitted — handled via ref guard above
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leaflet, destination])
+
+  // Show numbered markers + route when a day is selected
+  useEffect(() => {
+    if (!leaflet || !mapRef.current) return
+
+    markersRef.current.forEach((m) => m.remove())
+    markersRef.current = []
+    polylineRef.current?.remove()
+    polylineRef.current = null
+
+    const dayPlan = result?.itinerary.find((d) => d.day === selectedDay)
+    if (!dayPlan?.locations?.length) {
+      if (destMarkerRef.current && mapRef.current) {
+        const pos = destMarkerRef.current.getLatLng()
+        mapRef.current.setView(pos, 12)
+      }
+      return
+    }
+
+    const labels = ["☀️", "🌤️", "🌙"]
+    const colors = ["#E8652A", "#2A6EE8", "#8B3A8B"]
+
+    Promise.all(
+      dayPlan.locations.map((loc, i) =>
+        fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(loc + ", " + destination)}&format=json&limit=1`,
+          { headers: { "User-Agent": "Waypoint-Travel-Planner/1.0" } }
+        )
+          .then((r) => r.json())
+          .then((data: Array<{ lat: string; lon: string }>) =>
+            data[0]
+              ? {
+                  lat: parseFloat(data[0].lat),
+                  lon: parseFloat(data[0].lon),
+                  emoji: labels[i] ?? String(i + 1),
+                  color: colors[i] ?? "#E8652A",
+                  label: loc,
+                  index: i + 1,
+                }
+              : null
+          )
+          .catch(() => null)
+      )
+    ).then((results) => {
+      if (!mapRef.current || !leaflet) return
+      const valid = results.filter(Boolean) as {
+        lat: number
+        lon: number
+        emoji: string
+        color: string
+        label: string
+        index: number
+      }[]
+      if (!valid.length) return
+
+      const coords: [number, number][] = []
+
+      valid.forEach(({ lat, lon, emoji, color, label, index }) => {
+        const icon = leaflet.divIcon({
+          html: `<div style="background:${color};color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.32)">${emoji}</div>`,
+          className: "",
+          iconSize: [28, 28],
+          iconAnchor: [14, 14],
+        })
+
+        const marker = leaflet
+          .marker([lat, lon], { icon })
+          .bindPopup(`<strong>${index}. ${label}</strong>`)
+          .addTo(mapRef.current!)
+
+        markersRef.current.push(marker)
+        coords.push([lat, lon])
+      })
+
+      if (coords.length > 1) {
+        polylineRef.current = leaflet
+          .polyline(coords, {
+            color: "#E8652A",
+            weight: 2.5,
+            opacity: 0.72,
+            dashArray: "9, 7",
+          })
+          .addTo(mapRef.current!)
+      }
+
+      mapRef.current!.fitBounds(leaflet.latLngBounds(coords), {
+        padding: [50, 50],
+      })
+    })
+  }, [leaflet, selectedDay, result, destination])
 
   return (
     <div className="relative w-full h-full" style={{ backgroundColor: "#E8E2D9" }}>
-      {osmSrc ? (
-        <iframe
-          title="Destination map"
-          src={osmSrc}
-          className="absolute inset-0 w-full h-full border-0"
-          allowFullScreen
-          loading="lazy"
-        />
-      ) : (
-        <div className="flex items-center justify-center h-full">
+      <div ref={containerRef} className="absolute inset-0 w-full h-full" />
+      {!leaflet && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center" style={{ color: "#A89E94" }}>
             <p style={{ fontSize: 32, marginBottom: 8 }}>🗺️</p>
-            <p style={{ fontSize: 13 }}>Locating destination…</p>
+            <p style={{ fontSize: 13 }}>Loading map…</p>
             <p
               style={{
                 fontSize: 12,
@@ -176,10 +203,6 @@ export function MapPanel({ defaultQuery }: Props) {
             </p>
           </div>
         </div>
-      )}
-
-      {dayPlan && (
-        <DayDetailOverlay plan={dayPlan} onClose={() => setSelectedDay(null)} />
       )}
     </div>
   )

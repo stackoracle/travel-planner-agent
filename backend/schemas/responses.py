@@ -11,6 +11,8 @@ class DayPlan(BaseModel):
     evening: str
     accommodation: str
     estimated_cost: str
+    weather: str = ""
+    locations: list[str] = []
 
 
 class TripResult(BaseModel):

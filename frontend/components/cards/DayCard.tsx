@@ -52,6 +52,19 @@ export function DayCard({ plan, selected = false, onSelect }: Props) {
         </p>
       </div>
 
+      {/* Weather strip */}
+      {plan.weather && (
+        <div
+          className="px-4 py-2"
+          style={{
+            borderBottom: "1px solid #E8E2D9",
+            backgroundColor: selected ? "#FEF6F1" : "#FAFAF8",
+          }}
+        >
+          <p style={{ fontSize: 12, color: "#6B6459" }}>🌡️ {plan.weather}</p>
+        </div>
+      )}
+
       {/* Sections */}
       <div className="px-4 py-3 space-y-3 flex-1">
         <Section emoji="☀️" label="Morning" text={plan.morning} />
