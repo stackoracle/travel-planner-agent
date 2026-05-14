@@ -108,7 +108,7 @@ export function MapPanel({ defaultQuery }: Props) {
     if (!leaflet || !containerRef.current || mapRef.current) return;
 
     const map = leaflet.map(containerRef.current, {
-      center: [35.68, 139.69],
+      center: [50.075, 14.438],
       zoom: 11,
       zoomControl: true,
     });
