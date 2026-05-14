@@ -48,6 +48,7 @@ backend/
 ├── main.py
 ├── pyproject.toml
 ├── lint.py
+├── .gitignore
 ├── .env
 ├── agents/
 │   ├── __init__.py
@@ -127,6 +128,45 @@ uv sync          # installs all deps from pyproject.toml into .venv
 ```bash
 cd backend
 uv run python -m main
+```
+
+### `.gitignore`
+
+```
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# UV / virtualenv
+.venv/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# Type checker / linter caches
+.mypy_cache/
+.ruff_cache/
+
+# Distribution
+dist/
+build/
+*.egg-info/
+
+# Tests
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db
 ```
 
 ### `.env`
