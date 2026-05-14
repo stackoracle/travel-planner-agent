@@ -1,26 +1,39 @@
 "use client"
 
+import { useEffect, useRef } from "react"
 import { AnimatePresence } from "framer-motion"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { useShallow } from "zustand/react/shallow"
 import { AgentCard } from "@/components/cards/AgentCard"
 import { useTripStore } from "@/store/tripStore"
 
 const AGENT_ORDER = ["destination", "flight", "hotel", "weather", "itinerary"]
 
 export function LiveFeedPanel() {
-  const agents = useTripStore((s) => s.agents)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
-  const activeAgents = AGENT_ORDER.filter(
-    (a) => agents[a] && agents[a]!.status !== "idle"
+  // useShallow: re-renders ONLY when the list of active agents changes (agent starts/completes),
+  // NOT on every token — tokens only change s.agents[x].output, not which agents are active
+  const activeAgents = useTripStore(
+    useShallow((s) =>
+      AGENT_ORDER.filter((a) => s.agents[a]?.status !== "idle")
+    )
   )
+
+  // Scroll to bottom whenever a new agent card appears
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
+  }, [activeAgents.length])
 
   return (
     <div
       className="flex flex-col h-full"
       style={{ borderLeft: "1px solid #E8E2D9" }}
     >
+      {/* Panel header */}
       <div
-        className="px-4 py-3"
+        className="px-4 py-3 shrink-0"
         style={{ borderBottom: "1px solid #E8E2D9", backgroundColor: "#FAFAF8" }}
       >
         <p
@@ -36,11 +49,17 @@ export function LiveFeedPanel() {
         </p>
       </div>
 
-      <ScrollArea className="flex-1">
+      {/* Scrollable card list — min-h-0 is critical for flex shrink to work */}
+      <div
+        ref={scrollRef}
+        className="flex-1 min-h-0 overflow-y-auto"
+        style={{ scrollbarWidth: "thin", scrollbarColor: "#E8E2D9 transparent" }}
+      >
         <div className="p-3 space-y-3">
           <AnimatePresence initial={false}>
             {activeAgents.map((agent) => (
-              <AgentCard key={agent} agent={agent} state={agents[agent]!} />
+              // AgentCard subscribes to its own slice — only that card re-renders on its tokens
+              <AgentCard key={agent} agent={agent} />
             ))}
           </AnimatePresence>
 
@@ -53,7 +72,7 @@ export function LiveFeedPanel() {
             </p>
           )}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   )
 }
