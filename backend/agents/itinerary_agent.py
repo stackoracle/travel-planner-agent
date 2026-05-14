@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-from datetime import date
+from datetime import date, timedelta
 
 from loguru import logger
 from openai import AsyncOpenAI
@@ -49,12 +49,18 @@ async def run_itinerary_agent(
         ret = date.fromisoformat(request.return_date)
         n_days = max((ret - dep).days, 1)
 
+        day2_date = (dep + timedelta(days=1)).isoformat()
         schema_example = (
-            '{"itinerary": [{"day": 1, "date": "2025-09-01", "morning": "...", '
+            f'{{"itinerary": [{{"day": 1, "date": "{request.departure_date}", "morning": "...", '  # noqa: E501
             '"afternoon": "...", "evening": "...", "accommodation": "...", '
             '"estimated_cost": "~€80/person", '
             '"weather": "28°C, partly cloudy", '
-            '"locations": ["Tsukiji Fish Market", "Senso-ji Temple", "Shinjuku"]}], '  # noqa: E501
+            '"locations": ["Place A", "Place B", "Place C"]}, '
+            f'{{"day": 2, "date": "{day2_date}", "morning": "...", '
+            '"afternoon": "...", "evening": "...", "accommodation": "...", '
+            '"estimated_cost": "~€85/person", '
+            '"weather": "26°C, sunny", '
+            '"locations": ["Place D", "Place E", "Place F"]}], '
             '"total_estimated_cost": "~€1200 per person", '
             '"packing_list": ["item1", "item2"], '
             f'"map_query": "{request.destination}"}}'
@@ -65,6 +71,7 @@ async def run_itinerary_agent(
             f"and weather forecast — create a detailed day-by-day itinerary for "
             f"{request.travelers} travellers, {n_days} days in {request.destination}. "
             f"Budget: {request.budget}. Style: {request.travel_style}. "
+            f"Day 1 date is {request.departure_date}; increment by one day for each subsequent day. "  # noqa: E501
             f"For each day include morning/afternoon/evening activities, where to stay, "  # noqa: E501
             f"estimated daily cost in {request.currency}, "
             f"a brief 'weather' note (temperature + conditions for that day from the forecast), "  # noqa: E501
