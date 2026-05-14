@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# UV / virtualenv
+.venv/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# Type checker / linter caches
+.mypy_cache/
+.ruff_cache/
+
+# Distribution
+dist/
+build/
+*.egg-info/
+
+# Tests
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db
