@@ -73,10 +73,10 @@ export function MapPanel({ defaultQuery }: Props) {
 
         destMarkerRef.current?.remove()
         const icon = leaflet.divIcon({
-          html: `<div style="background:#E8652A;color:white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:13px;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)">📍</div>`,
+          html: `<div style="background:#E8652A;color:white;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:18px;border:2.5px solid white;box-shadow:0 3px 10px rgba(0,0,0,0.35)">📍</div>`,
           className: "",
-          iconSize: [22, 22],
-          iconAnchor: [11, 11],
+          iconSize: [34, 34],
+          iconAnchor: [17, 17],
         })
         destMarkerRef.current = leaflet
           .marker([lat, lon], { icon })
@@ -152,10 +152,10 @@ export function MapPanel({ defaultQuery }: Props) {
 
       valid.forEach(({ lat, lon, emoji, color, label, index }) => {
         const icon = leaflet.divIcon({
-          html: `<div style="background:${color};color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.32)">${emoji}</div>`,
+          html: `<div style="background:${color};color:white;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:20px;border:2.5px solid white;box-shadow:0 3px 12px rgba(0,0,0,0.35)">${emoji}</div>`,
           className: "",
-          iconSize: [28, 28],
-          iconAnchor: [14, 14],
+          iconSize: [40, 40],
+          iconAnchor: [20, 20],
         })
 
         const marker = leaflet

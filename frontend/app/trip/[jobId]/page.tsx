@@ -19,8 +19,6 @@ export default function TripPage({ params }: Props) {
 
   const request = useTripStore((s) => s.request)
   const result = useTripStore((s) => s.result)
-  const itineraryStatus = useTripStore((s) => s.agents["itinerary"]?.status ?? "idle")
-  const isDone = itineraryStatus === "complete"
 
   const destination = result?.destination ?? request?.destination ?? "Your trip"
   const origin = request?.origin ?? ""
@@ -98,24 +96,22 @@ export default function TripPage({ params }: Props) {
           </>
         )}
 
-        {isDone && (
-          <Link
-            href="/"
-            className="ml-auto flex items-center gap-1"
-            style={{
-              backgroundColor: "#E8652A",
-              color: "#FFFFFF",
-              fontSize: 12,
-              fontWeight: 600,
-              padding: "6px 14px",
-              borderRadius: 6,
-              textDecoration: "none",
-              whiteSpace: "nowrap",
-            }}
-          >
-            ← New Trip
-          </Link>
-        )}
+        <Link
+          href="/"
+          className="ml-auto flex items-center gap-1"
+          style={{
+            backgroundColor: "#E8652A",
+            color: "#FFFFFF",
+            fontSize: 12,
+            fontWeight: 600,
+            padding: "6px 14px",
+            borderRadius: 6,
+            textDecoration: "none",
+            whiteSpace: "nowrap",
+          }}
+        >
+          ← New Trip
+        </Link>
       </header>
 
       {/* Three-column body */}

@@ -170,8 +170,9 @@ export function AgentCard({ agent }: Props) {
         typeof document !== "undefined" &&
         createPortal(
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center"
+            className="fixed inset-0 flex items-center justify-center"
             style={{
+              zIndex: 9999,
               backgroundColor: "rgba(26,22,20,0.72)",
               backdropFilter: "blur(6px)",
             }}
