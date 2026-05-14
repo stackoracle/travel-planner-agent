@@ -122,6 +122,13 @@ cd backend
 uv sync          # installs all deps from pyproject.toml into .venv
 ```
 
+### Run
+
+```bash
+cd backend
+uv run python -m main
+```
+
 ### `.env`
 
 ```
@@ -211,6 +218,10 @@ app.include_router(router, prefix="/api")
 @app.on_event("startup")
 async def startup() -> None:
     logger.info("Waypoint API started")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
 ```
 
 ---
