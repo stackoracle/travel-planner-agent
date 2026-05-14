@@ -3,7 +3,9 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncGenerator
 
-from fastapi import APIRouter, HTTPException
+import httpx
+from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import JSONResponse
 from sse_starlette.sse import EventSourceResponse
 
 from core.job_store import create_job, get_job
@@ -12,6 +14,19 @@ from schemas.requests import TripRequest
 from schemas.responses import TripResult
 
 router = APIRouter()
+
+
+@router.get("/geocode")
+async def geocode(q: str = Query(..., min_length=1)) -> JSONResponse:
+    url = "https://nominatim.openstreetmap.org/search"
+    async with httpx.AsyncClient(timeout=8) as client:
+        r = await client.get(
+            url,
+            params={"q": q, "format": "json", "limit": "1"},
+            headers={"User-Agent": "Waypoint-Travel-Planner/1.0"},
+        )
+    r.raise_for_status()
+    return JSONResponse(content=r.json())
 
 
 @router.post("/plan")

@@ -1,5 +1,6 @@
 "use client"
 
+import { useDeferredValue } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import type { AgentStatus } from "@/store/tripStore"
@@ -29,6 +30,9 @@ const CURSOR = (
 
 export function StreamingText({ text, status, mono = false, className }: Props) {
   const isLive = status === "active" || status === "thinking"
+  // Defer markdown re-parses so rapid token bursts don't block the main thread.
+  // React renders with the previous (stale) text first, then catches up when idle.
+  const deferredText = useDeferredValue(text)
 
   if (mono) {
     return (
@@ -51,7 +55,9 @@ export function StreamingText({ text, status, mono = false, className }: Props) 
 
   return (
     <div className={`prose-content${className ? ` ${className}` : ""}`}>
-      {text && <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>}
+      {deferredText && (
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{deferredText}</ReactMarkdown>
+      )}
       {isLive && CURSOR}
     </div>
   )
