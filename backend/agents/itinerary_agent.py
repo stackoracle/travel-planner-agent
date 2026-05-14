@@ -53,15 +53,15 @@ async def run_itinerary_agent(
         schema_example = (
             f'{{"itinerary": [{{"day": 1, "date": "{request.departure_date}", "morning": "...", '  # noqa: E501
             '"afternoon": "...", "evening": "...", "accommodation": "...", '
-            '"estimated_cost": "~€80/person", '
-            '"weather": "28°C, partly cloudy", '
+            f'"estimated_cost": "~{request.currency}XX/person", '
+            '"weather": "XX°C, ...", '
             '"locations": ["Place A", "Place B", "Place C"]}, '
             f'{{"day": 2, "date": "{day2_date}", "morning": "...", '
             '"afternoon": "...", "evening": "...", "accommodation": "...", '
-            '"estimated_cost": "~€85/person", '
-            '"weather": "26°C, sunny", '
+            f'"estimated_cost": "~{request.currency}XX/person", '
+            '"weather": "XX°C, ...", '
             '"locations": ["Place D", "Place E", "Place F"]}], '
-            '"total_estimated_cost": "~€1200 per person", '
+            f'"total_estimated_cost": "~{request.currency}XXXX total per person", '
             '"packing_list": ["item1", "item2"], '
             f'"map_query": "{request.destination}"}}'
         )
