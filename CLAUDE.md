@@ -46,8 +46,8 @@ Five agents run — four in parallel, one synthesises after.
 ```
 backend/
 ├── main.py
-├── requirements.txt
 ├── pyproject.toml
+├── lint.py
 ├── .env
 ├── agents/
 │   ├── __init__.py
@@ -119,9 +119,7 @@ frontend/
 
 ```bash
 cd backend
-uv venv
-uv pip install fastapi uvicorn python-dotenv openai httpx \
-  sse-starlette tavily-python "pydantic>=2.0" loguru ruff mypy
+uv sync          # installs all deps from pyproject.toml into .venv
 ```
 
 ### `.env`
@@ -134,25 +132,28 @@ GOOGLE_MAPS_EMBED_KEY=your_key  # free tier, Maps Embed API only
 # Open-Meteo: no key required
 ```
 
-### `requirements.txt`
-
-```
-fastapi
-uvicorn
-python-dotenv
-openai
-httpx
-sse-starlette
-tavily-python
-pydantic>=2.0
-loguru
-ruff
-mypy
-```
-
 ### `pyproject.toml`
 
 ```toml
+[project]
+name = "waypoint-backend"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "python-dotenv",
+    "openai",
+    "httpx",
+    "sse-starlette",
+    "tavily-python",
+    "pydantic>=2.0",
+    "loguru",
+]
+
+[dependency-groups]
+dev = ["ruff", "mypy"]
+
 [tool.ruff]
 line-length = 88
 select = ["E", "F", "I", "UP", "B"]
@@ -166,6 +167,25 @@ python_version = "3.11"
 strict = true
 ignore_missing_imports = true
 ```
+
+### `lint.py`
+
+```python
+import subprocess
+import sys
+
+steps = [
+    ["ruff", "check", "--fix", "."],
+    ["ruff", "format", "."],
+    ["mypy", "."],
+]
+
+for cmd in steps:
+    if subprocess.run(cmd).returncode != 0:
+        sys.exit(1)
+```
+
+Run with `uv run python lint.py` from `backend/`.
 
 ### `main.py`
 
@@ -796,7 +816,7 @@ export const getResult = async (
 7. `core/streaming.py` — SSE formatter
 8. `api/routes.py` — 3 endpoints
 9. `agents/base.py` — abstract base, type contracts
-10. `ruff check .` + `mypy .` — fix all errors
+10. `uv run python lint.py` — fix all errors
 
 ### Step 2 — Agents
 
@@ -806,7 +826,7 @@ export const getResult = async (
 4. `flight_agent` — Tavily × 2, stream output
 5. `core/orchestrator.py` — `asyncio.gather` all four
 6. `itinerary_agent` — receives all outputs, produces `list[DayPlan]` JSON, Pydantic-validated
-7. `ruff check .` + `mypy .`
+7. `uv run python lint.py`
 8. End-to-end test: POST → full SSE stream → `TripResult` with structured itinerary
 
 ### Step 3 — Frontend Foundation
@@ -848,7 +868,7 @@ export const getResult = async (
 
 * `asyncio.gather` for the four parallel agents — never sequential
 * Every agent emits `thinking` before any tool call or LLM call
-* All backend code passes `ruff check .` and `mypy --strict` before commit
+* All backend code passes `uv run python lint.py` before commit
 * `AgentEvent` Pydantic model for every SSE event — never raw dicts
 * All external API calls go through `core/tools.py` wrappers — never inline in agents
 * Tool wrappers always emit `tool_call` before calling and `tool_result` after
