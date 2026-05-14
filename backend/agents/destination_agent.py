@@ -18,7 +18,11 @@ async def run_destination_agent(
 ) -> str:
     try:
         await queue.put(
-            AgentEvent(agent=AGENT, type="thinking", data=f"Researching {request.destination}...")
+            AgentEvent(
+                agent=AGENT,
+                type="thinking",
+                data=f"Researching {request.destination}...",
+            )
         )
 
         r1 = await run_web_search(
@@ -38,9 +42,11 @@ async def run_destination_agent(
         )
 
         prompt = (
-            f"You are a seasoned travel writer. Research the top attractions, best neighbourhoods "
-            f"to stay in, and must-try local food and experiences in {request.destination}. "
-            f"Be specific and practical, not generic.\n\nResearch data:\n{context}"
+            "You are a seasoned travel writer. Research the top attractions, "
+            "best neighbourhoods to stay in, and must-try local food and "
+            f"experiences in {request.destination}. "
+            "Be specific and practical, not generic."
+            f"\n\nResearch data:\n{context}"
         )
 
         client = AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"])
@@ -61,5 +67,7 @@ async def run_destination_agent(
 
     except Exception:
         logger.exception("destination_agent failed")
-        await queue.put(AgentEvent(agent=AGENT, type="error", data="Destination research failed"))
+        await queue.put(
+            AgentEvent(agent=AGENT, type="error", data="Destination research failed")
+        )
         return ""

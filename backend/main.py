@@ -1,12 +1,11 @@
 from dotenv import load_dotenv
-
-load_dotenv()
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
 from api.routes import router
+
+load_dotenv()
 
 logger.add("logs/app.log", rotation="10 MB", retention="7 days", level="INFO")
 

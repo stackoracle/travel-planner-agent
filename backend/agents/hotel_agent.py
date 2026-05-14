@@ -21,12 +21,16 @@ async def run_hotel_agent(
             AgentEvent(
                 agent=AGENT,
                 type="thinking",
-                data=f"Searching {request.budget} accommodation in {request.destination}...",
+                data=(
+                    f"Searching {request.budget} accommodation"
+                    f" in {request.destination}..."
+                ),
             )
         )
 
         r1 = await run_web_search(
-            f"{request.budget} hotels {request.destination} {request.travel_style} traveller",
+            f"{request.budget} hotels {request.destination}"
+            f" {request.travel_style} traveller",
             AGENT,
             queue,
         )
@@ -44,9 +48,10 @@ async def run_hotel_agent(
 
         prompt = (
             f"Find {request.budget} accommodation in {request.destination} for a "
-            f"{request.travel_style} traveller. Recommend 3–5 specific hotels, hostels, or apartments. "
-            f"Include neighbourhood, nightly price range in {request.currency}, and one sentence on "
-            f"why each suits this trip.\n\nResearch data:\n{context}"
+            f"{request.travel_style} traveller. Recommend 3–5 specific hotels, "
+            "hostels, or apartments. Include neighbourhood, nightly price range "
+            f"in {request.currency}, and one sentence on why each suits this trip."
+            f"\n\nResearch data:\n{context}"
         )
 
         client = AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"])
@@ -67,5 +72,7 @@ async def run_hotel_agent(
 
     except Exception:
         logger.exception("hotel_agent failed")
-        await queue.put(AgentEvent(agent=AGENT, type="error", data="Hotel research failed"))
+        await queue.put(
+            AgentEvent(agent=AGENT, type="error", data="Hotel research failed")
+        )
         return ""

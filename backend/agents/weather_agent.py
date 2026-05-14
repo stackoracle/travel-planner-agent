@@ -61,5 +61,7 @@ async def run_weather_agent(
 
     except Exception:
         logger.exception("weather_agent failed")
-        await queue.put(AgentEvent(agent=AGENT, type="error", data="Weather research failed"))
+        await queue.put(
+            AgentEvent(agent=AGENT, type="error", data="Weather research failed")
+        )
         return ""

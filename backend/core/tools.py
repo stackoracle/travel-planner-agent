@@ -16,10 +16,14 @@ async def run_web_search(
     queue: asyncio.Queue[AgentEvent],
     max_results: int = 5,
 ) -> list[dict[str, Any]]:
-    await queue.put(AgentEvent(agent=agent, type="tool_call", data=f"web_search('{query}')"))
+    await queue.put(
+        AgentEvent(agent=agent, type="tool_call", data=f"web_search('{query}')")
+    )
     results = await _tavily_search(query, max_results)
     await queue.put(
-        AgentEvent(agent=agent, type="tool_result", data=f"Found {len(results)} results")
+        AgentEvent(
+            agent=agent, type="tool_result", data=f"Found {len(results)} results"
+        )
     )
     return results
 
@@ -77,7 +81,7 @@ async def run_currency_convert(
 
 
 async def _tavily_search(query: str, max_results: int) -> list[dict[str, Any]]:
-    from tavily import TavilyClient  # type: ignore[import-untyped]
+    from tavily import TavilyClient
 
     api_key = os.environ["TAVILY_API_KEY"]
 

@@ -59,11 +59,11 @@ async def run_itinerary_agent(
         )
 
         prompt = (
-            f"Using this research — destination guide, flight info, accommodation options, "
+            f"Using this research — destination guide, flight info, accommodation options, "  # noqa: E501
             f"and weather forecast — create a detailed day-by-day itinerary for "
             f"{request.travelers} travellers, {n_days} days in {request.destination}. "
             f"Budget: {request.budget}. Style: {request.travel_style}. "
-            f"For each day include morning/afternoon/evening activities, where to stay, "
+            f"For each day include morning/afternoon/evening activities, where to stay, "  # noqa: E501
             f"and estimated daily cost in {request.currency}.\n\n"
             f"Respond ONLY with a valid JSON object (no markdown, no code fences) "
             f"exactly matching this structure:\n{schema_example}\n\n"

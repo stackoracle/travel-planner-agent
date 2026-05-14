@@ -21,17 +21,22 @@ async def run_flight_agent(
             AgentEvent(
                 agent=AGENT,
                 type="thinking",
-                data=f"Researching flights from {request.origin} to {request.destination}...",
+                data=(
+                    f"Researching flights from {request.origin}"
+                    f" to {request.destination}..."
+                ),
             )
         )
 
         r1 = await run_web_search(
-            f"flights {request.origin} to {request.destination} {request.departure_date}",
+            f"flights {request.origin} to {request.destination}"
+            f" {request.departure_date}",
             AGENT,
             queue,
         )
         r2 = await run_web_search(
-            f"flight prices {request.origin} {request.destination} {request.currency} 2025",
+            f"flight prices {request.origin} {request.destination}"
+            f" {request.currency} 2025",
             AGENT,
             queue,
         )
@@ -44,8 +49,9 @@ async def run_flight_agent(
 
         prompt = (
             f"Research flights from {request.origin} to {request.destination} "
-            f"around {request.departure_date}. Provide realistic price ranges in {request.currency}, "
-            f"best booking windows, recommended airlines, and note any common stopovers."
+            f"around {request.departure_date}. Provide realistic price ranges "
+            f"in {request.currency}, best booking windows, recommended airlines, "
+            "and note any common stopovers."
             f"\n\nResearch data:\n{context}"
         )
 
@@ -67,5 +73,7 @@ async def run_flight_agent(
 
     except Exception:
         logger.exception("flight_agent failed")
-        await queue.put(AgentEvent(agent=AGENT, type="error", data="Flight research failed"))
+        await queue.put(
+            AgentEvent(agent=AGENT, type="error", data="Flight research failed")
+        )
         return ""
