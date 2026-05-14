@@ -131,10 +131,10 @@ async def _open_meteo_forecast(
 
 
 async def _exchangerate_convert(amount: float, frm: str, to: str) -> float:
-    api_key = os.environ.get("EXCHANGERATE_API_KEY", "")
-    url = f"https://v6.exchangerate-api.com/v6/{api_key}/pair/{frm}/{to}/{amount}"
+    url = "https://api.frankfurter.app/latest"
     async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.get(url)
+        resp = await client.get(url, params={"from": frm, "to": to, "amount": amount})
         resp.raise_for_status()
         data: dict[str, Any] = resp.json()
-        return float(data["conversion_result"])
+        rates: dict[str, float] = data["rates"]
+        return rates[to]
