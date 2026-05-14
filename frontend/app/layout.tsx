@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Playfair_Display, DM_Sans, JetBrains_Mono } from "next/font/google"
+import { Playfair_Display, Plus_Jakarta_Sans, JetBrains_Mono, Lora } from "next/font/google"
 import "./globals.css"
 
 const playfair = Playfair_Display({
@@ -7,9 +7,17 @@ const playfair = Playfair_Display({
   variable: "--font-playfair",
 })
 
-const dmSans = DM_Sans({
+// Replaces DM Sans — keeps the same CSS variable so all components pick it up automatically
+const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-dm-sans",
+  weight: ["400", "500", "600", "700"],
+})
+
+const lora = Lora({
+  subsets: ["latin"],
+  variable: "--font-prose",
+  style: ["normal", "italic"],
 })
 
 const jetbrainsMono = JetBrains_Mono({
@@ -28,7 +36,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${playfair.variable} ${dmSans.variable} ${jetbrainsMono.variable} h-full`}
+      className={`${playfair.variable} ${jakarta.variable} ${lora.variable} ${jetbrainsMono.variable} h-full`}
     >
       <body className="min-h-full antialiased">{children}</body>
     </html>

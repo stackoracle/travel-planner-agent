@@ -37,6 +37,7 @@ interface Store {
   agents: Record<string, AgentState>
   logs: LogEntry[]
   result: TripResult | null
+  selectedDay: number | null
   setRequest: (r: TripRequest) => void
   setJobId: (id: string) => void
   setRunning: (running: boolean) => void
@@ -45,6 +46,7 @@ interface Store {
   addToolCall: (agent: string, call: string) => void
   addLog: (entry: LogEntry) => void
   setResult: (result: TripResult) => void
+  setSelectedDay: (day: number | null) => void
   reset: () => void
 }
 
@@ -55,6 +57,7 @@ export const useTripStore = create<Store>((set) => ({
   agents: Object.fromEntries(AGENTS.map((a) => [a, defaultAgentState()])),
   logs: [],
   result: null,
+  selectedDay: null,
 
   setRequest: (r) => set({ request: r }),
   setJobId: (id) => set({ jobId: id }),
@@ -105,6 +108,8 @@ export const useTripStore = create<Store>((set) => ({
   addLog: (entry) => set((s) => ({ logs: [...s.logs, entry] })),
 
   setResult: (result) => set({ result }),
+
+  setSelectedDay: (day) => set({ selectedDay: day }),
 
   reset: () =>
     set({

@@ -1,6 +1,7 @@
 "use client"
 
 import { use } from "react"
+import Link from "next/link"
 import { useAgentStream } from "@/hooks/useAgentStream"
 import { useTripStore } from "@/store/tripStore"
 import { AgentStatusPanel } from "@/components/dashboard/AgentStatusPanel"
@@ -18,6 +19,8 @@ export default function TripPage({ params }: Props) {
 
   const request = useTripStore((s) => s.request)
   const result = useTripStore((s) => s.result)
+  const itineraryStatus = useTripStore((s) => s.agents["itinerary"]?.status ?? "idle")
+  const isDone = itineraryStatus === "complete"
 
   const destination = result?.destination ?? request?.destination ?? "Your trip"
   const origin = request?.origin ?? ""
@@ -25,10 +28,17 @@ export default function TripPage({ params }: Props) {
   const ret = request?.return_date ?? ""
 
   const depStr = dep
-    ? new Date(dep + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
+    ? new Date(dep + "T00:00:00").toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
     : ""
   const retStr = ret
-    ? new Date(ret + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" })
+    ? new Date(ret + "T00:00:00").toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+      })
     : ""
   const dateRange = depStr && retStr ? `${depStr} – ${retStr}` : depStr
 
@@ -46,7 +56,14 @@ export default function TripPage({ params }: Props) {
           backgroundColor: "#FFFFFF",
         }}
       >
-        <span style={{ fontSize: 13, fontWeight: 700, color: "#E8652A", letterSpacing: "0.1em" }}>
+        <span
+          style={{
+            fontSize: 13,
+            fontWeight: 700,
+            color: "#E8652A",
+            letterSpacing: "0.1em",
+          }}
+        >
           ✈ WAYPOINT
         </span>
         <span style={{ color: "#E8E2D9" }}>·</span>
@@ -80,12 +97,31 @@ export default function TripPage({ params }: Props) {
             </span>
           </>
         )}
+
+        {isDone && (
+          <Link
+            href="/"
+            className="ml-auto flex items-center gap-1"
+            style={{
+              backgroundColor: "#E8652A",
+              color: "#FFFFFF",
+              fontSize: 12,
+              fontWeight: 600,
+              padding: "6px 14px",
+              borderRadius: 6,
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            ← New Trip
+          </Link>
+        )}
       </header>
 
       {/* Three-column body */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left — Agent status (240px) */}
-        <div style={{ width: 240, flexShrink: 0 }}>
+        <div className="h-full" style={{ width: 240, flexShrink: 0 }}>
           <AgentStatusPanel />
         </div>
 
@@ -95,7 +131,7 @@ export default function TripPage({ params }: Props) {
         </div>
 
         {/* Right — Live feed (320px) */}
-        <div style={{ width: 320, flexShrink: 0 }}>
+        <div className="h-full overflow-hidden" style={{ width: 320, flexShrink: 0 }}>
           <LiveFeedPanel />
         </div>
       </div>

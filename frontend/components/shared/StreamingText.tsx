@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 import type { AgentStatus } from "@/store/tripStore"
 
 interface Props {
@@ -10,40 +11,50 @@ interface Props {
   className?: string
 }
 
+const CURSOR = (
+  <span
+    style={{
+      display: "inline-block",
+      fontFamily: "var(--font-jetbrains-mono)",
+      fontSize: 13,
+      lineHeight: 1,
+      animation: "blink 1s step-end infinite",
+      color: "#E8652A",
+      marginLeft: 1,
+    }}
+  >
+    |
+  </span>
+)
+
 export function StreamingText({ text, status, mono = false, className }: Props) {
-  const textRef = useRef<HTMLSpanElement>(null)
-  const cursorRef = useRef<HTMLSpanElement>(null)
+  const isLive = status === "active" || status === "thinking"
 
-  useEffect(() => {
-    if (textRef.current) textRef.current.textContent = text
-  }, [text])
-
-  useEffect(() => {
-    if (cursorRef.current) {
-      cursorRef.current.style.display =
-        status === "active" || status === "thinking" ? "inline" : "none"
-    }
-  }, [status])
+  if (mono) {
+    return (
+      <span
+        className={className}
+        style={{
+          fontFamily: "var(--font-jetbrains-mono)",
+          fontSize: 12,
+          lineHeight: 1.6,
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+          color: "#6B6459",
+        }}
+      >
+        {text}
+        {isLive && CURSOR}
+      </span>
+    )
+  }
 
   return (
-    <span
-      className={className}
-      style={{
-        fontFamily: mono ? "var(--font-jetbrains-mono)" : "var(--font-dm-sans)",
-        fontSize: mono ? 12 : 14,
-        lineHeight: 1.6,
-        whiteSpace: "pre-wrap",
-        wordBreak: "break-word",
-      }}
-    >
-      <span ref={textRef} />
-      <span
-        ref={cursorRef}
-        style={{ display: "none", animation: "blink 1s step-end infinite" }}
-      >
-        |
-      </span>
-      <style>{`@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }`}</style>
-    </span>
+    <div className={`prose-content${className ? ` ${className}` : ""}`}>
+      {text ? (
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+      ) : null}
+      {isLive && CURSOR}
+    </div>
   )
 }

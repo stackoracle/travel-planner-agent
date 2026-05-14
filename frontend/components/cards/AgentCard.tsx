@@ -43,7 +43,7 @@ export function AgentCard({ agent, state }: Props) {
   }, [state.toolCalls.length])
 
   const elapsedStr =
-    state.startedAt && (state.status !== "idle")
+    state.startedAt && state.status !== "idle"
       ? `${Math.floor(elapsed / 1000)}s`
       : ""
 
@@ -76,16 +76,20 @@ export function AgentCard({ agent, state }: Props) {
         {elapsedStr && (
           <span
             className="ml-auto"
-            style={{ fontSize: 11, color: "#A89E94", fontFamily: "var(--font-jetbrains-mono)" }}
+            style={{
+              fontSize: 11,
+              color: "#A89E94",
+              fontFamily: "var(--font-jetbrains-mono)",
+            }}
           >
             {elapsedStr}
           </span>
         )}
       </div>
 
-      {/* Tool calls */}
-      {state.toolCalls.length > 0 && (
-        <div className="px-3 pt-2 space-y-0.5">
+      {/* Scrollable body — tool calls + output, capped at 200px */}
+      <ScrollArea style={{ maxHeight: 200 }}>
+        <div className="px-3 py-2 space-y-1">
           {state.toolCalls.map((call, i) => (
             <p
               key={i}
@@ -101,23 +105,14 @@ export function AgentCard({ agent, state }: Props) {
               &gt; {call}
             </p>
           ))}
-        </div>
-      )}
 
-      {/* Body */}
-      {state.output && (
-        <ScrollArea style={{ maxHeight: 200 }}>
-          <div className="px-3 py-2">
-            <StreamingText text={state.output} status={state.status} />
-          </div>
-        </ScrollArea>
-      )}
-
-      {state.status === "thinking" && !state.output && (
-        <div className="px-3 py-2">
-          <StreamingText text="" status={state.status} />
+          {(state.output || state.status === "thinking") && (
+            <div style={{ paddingTop: state.toolCalls.length > 0 ? 6 : 0 }}>
+              <StreamingText text={state.output} status={state.status} />
+            </div>
+          )}
         </div>
-      )}
+      </ScrollArea>
     </motion.div>
   )
 }
