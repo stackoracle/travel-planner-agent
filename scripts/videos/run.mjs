@@ -1,6 +1,15 @@
-// Records the single portfolio demo video for Agentic RAG against a local
-// dev instance of the app (see ../../PORTFOLIO.md). One continuous take,
-// one output file - not a milestone-style set of clips.
+// Records the single portfolio demo video for TripAssist against local dev
+// instances of the frontend (Next.js, :3000) and backend (FastAPI, :8000).
+//
+// This recorder was originally built for a different project (an "Agentic
+// RAG" document Q&A tool) and reused a document-upload + evaluation-run
+// story that doesn't exist here. The beats below are TripAssist's own:
+// sign up -> empty dashboard -> fill the trip form -> watch five agents
+// stream in parallel -> itinerary reveal -> drill into a day -> trip saved
+// to history. The supporting libs (human-shaped real OS input, the desktop
+// capture, the caption overlay) are generic and unchanged; lib/upload.mjs
+// and fixtures/ are leftover from the old app's file-upload flow and are not
+// used here since TripAssist has no file uploads.
 //
 // Captures the real desktop (ffmpeg gdigrab) rather than Playwright's own
 // video recorder so the fullscreen, chrome-less browser window - and the
@@ -11,7 +20,7 @@
 // the pointer would never actually move while the page reacts on its own.
 //
 //   node run.mjs                 dry run, no capture, useful while editing beats
-//   node run.mjs --record        capture to ../../demo/video/agentic-rag-demo.mp4
+//   node run.mjs --record        capture to ../../demo/video/tripassist-demo.mp4
 
 import { chromium } from "playwright";
 import { spawn } from "node:child_process";
@@ -22,64 +31,47 @@ import { fileURLToPath } from "node:url";
 import { installOverlay, setCaption } from "./lib/overlay.mjs";
 import { OsInput } from "./lib/os-input.mjs";
 import { useInput, calibrate, humanClick, humanType, keepAwake, pause, readingPause } from "./lib/human.mjs";
-import { uploadThroughDialog } from "./lib/upload.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, "../..");
-const BASE_URL = "http://127.0.0.1:8000";
+// Must be "localhost", not "127.0.0.1" - the backend's CORS allowlist
+// (main.py) only permits http://localhost:3000, and the two hosts are
+// different origins to the browser even though they resolve the same way.
+const FRONTEND_URL = "http://localhost:3000";
 
-const ACCOUNT = { email: "demo@agentic-rag.io", password: "DemoPass123!" };
-const PDF_PATH = path.join(REPO_ROOT, "output", "sample-privacy-policy-template.pdf");
-const DATASET_PATH = path.join(HERE, "fixtures", "demo-eval-subset.jsonl");
-const OUTPUT_PATH = path.join(REPO_ROOT, "demo", "video", "agentic-rag-demo.mp4");
+// A fresh, unique account every run - the "empty trip history" beat on the
+// dashboard only reads honestly for an account that has genuinely never
+// planned a trip before.
+const RUN_STAMP = Date.now();
+const ACCOUNT = {
+  name: "Demo Traveller",
+  // Pydantic's EmailStr rejects ".local" as an invalid TLD - needs to look
+  // like a real address even though nothing is ever sent to it.
+  email: `demo.${RUN_STAMP}@tripassist-demo.com`,
+  password: "DemoPass123!",
+};
+
+const TRIP = {
+  destination: "Lisbon, Portugal",
+  originTyped: "Amsterdam",
+  originMatch: "Amsterdam, Netherlands",
+  departure: futureIsoDate(45),
+  return: futureIsoDate(51),
+  style: "Foodie",
+  budget: "Mid-range",
+  currency: "€",
+  payment: "Credit card",
+};
+
+const OUTPUT_PATH = path.join(REPO_ROOT, "demo", "video", "tripassist-demo.mp4");
 
 const SCREEN = { width: 1920, height: 1080 };
 const RECORD = process.argv.includes("--record");
 
-async function ensureAccount() {
-  const res = await fetch(`${BASE_URL}/auth/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(ACCOUNT),
-  });
-  if (res.ok || res.status === 400) return; // 400 = already registered
-  const body = await res.text().catch(() => "");
-  throw new Error(`Could not prepare demo account: ${res.status} ${body}`);
-}
-
-/** Point each file dialog at its folder once, before recording starts.
- *
- * Windows opens a common file dialog in whatever directory it was last used
- * in, which on a fresh browser profile is the user's home folder - putting a
- * directory listing full of personal folder names (.ssh, .aws, work, ...) on
- * screen the moment either dialog opens. It has to actually complete an Open
- * in the target folder to be remembered; navigating there and cancelling
- * does not update the last-used directory. So this logs in over the API,
- * opens each dialog once for real, and clears the token again afterward so
- * the recorded take's own login beat is genuine. */
-async function primeFileDialogs(page, input) {
-  console.log("Priming file dialog folders...");
-  const loginRes = await fetch(`${BASE_URL}/auth/jwt/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ username: ACCOUNT.email, password: ACCOUNT.password }).toString(),
-  });
-  if (!loginRes.ok) throw new Error(`Priming login failed: ${loginRes.status}`);
-  const { access_token } = await loginRes.json();
-
-  await page.goto(`${BASE_URL}/login-ui`, { waitUntil: "networkidle" });
-  await page.evaluate((token) => window.localStorage.setItem("agentic_rag_jwt", token), access_token);
-
-  await page.goto(`${BASE_URL}/documents-ui`, { waitUntil: "networkidle" });
-  await uploadThroughDialog(page, input, page.locator("#pdfInput"), PDF_PATH, { afterMs: 200 });
-
-  await page.goto(`${BASE_URL}/evaluations-create-ui`, { waitUntil: "networkidle" });
-  await humanClick(page, page.locator("#uploadDatasetBtn"));
-  await uploadThroughDialog(page, input, page.locator("#datasetFileInput"), DATASET_PATH, { afterMs: 200 });
-
-  // Back to a logged-out state so the recorded take's own login beat is real.
-  await page.evaluate(() => window.localStorage.clear());
-  await page.goto(`${BASE_URL}/login-ui`, { waitUntil: "networkidle" });
+function futureIsoDate(daysFromNow) {
+  const d = new Date();
+  d.setDate(d.getDate() + daysFromNow);
+  return d.toISOString().slice(0, 10);
 }
 
 class ScreenRecorder {
@@ -132,14 +124,62 @@ async function beat(page, text, action, { holdMs = 1800, title = false } = {}) {
   await readingPause(holdMs);
 }
 
-async function main() {
-  console.log("Preparing demo account...");
-  await ensureAccount();
+/** Find one agent's Live Feed card by its exact badge label ("Weather",
+ * "Destination", "Flights", "Hotels", "Itinerary") - not by hasText on the
+ * whole card, since a card's own streamed prose can easily mention another
+ * agent's label as a plain word (e.g. the destination agent's write-up
+ * mentioning "hotel" areas). Matching the badge span's exact text instead
+ * anchors on markup, not on whatever the model happens to write. */
+function agentCardLocator(page, label) {
+  const badge = page.locator("span", { hasText: new RegExp(`^${label}$`) });
+  return page.locator(".tp-glass").filter({ has: badge }).first();
+}
 
+/** Open one agent's fullscreen card (tool calls + full streamed markdown),
+ * hold on it while the caption reads, then close it. The Expand button only
+ * renders once the card has some output, so this waits for it rather than
+ * racing the stream. */
+async function expandAgentCard(page, label, caption, { holdMs = 3200 } = {}) {
+  await beat(
+    page,
+    caption,
+    async () => {
+      const expandBtn = agentCardLocator(page, label).locator('button[title="Expand"]');
+      await waitVisible(page, expandBtn, { timeoutMs: 60000 });
+      await humanClick(page, expandBtn);
+    },
+    { holdMs }
+  );
+  await humanClick(page, page.locator('button[title="Close (Esc)"]'));
+  await pause(400);
+}
+
+/** Poll a locator's visibility without hanging forever on content that only
+ * exists once background agent work (real LLM + web search calls) finishes.
+ * A tiny cursor twitch every few seconds keeps Windows from idle-locking the
+ * display during an unattended multi-minute wait mid-recording. */
+async function waitVisible(page, locator, { timeoutMs, pollMs = 3000 } = {}) {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    if (await locator.first().isVisible().catch(() => false)) return;
+    if (Date.now() > deadline) throw new Error("waitVisible: timed out waiting for element to appear.");
+    await keepAwake();
+    await pause(pollMs);
+  }
+}
+
+async function main() {
   if (RECORD) await mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
 
+  // channel: "chrome" uses the system-installed, signed Chrome rather than
+  // Playwright's own downloaded Chromium build. On a machine with an
+  // Application Control / WDAC-style policy, the downloaded build can be
+  // blocked from opening a window at all (it still launches headless, since
+  // that doesn't create a window) while the already-trusted system browser
+  // is unaffected.
   const browser = await chromium.launch({
     headless: false,
+    channel: "chrome",
     args: ["--start-maximized", "--disable-infobars", "--hide-crash-restore-bubble"],
   });
   browser.on("disconnected", () => console.error("  ! browser DISCONNECTED event fired"));
@@ -156,13 +196,9 @@ async function main() {
 
   // Maximized, not true fullscreen: the capture is the whole desktop either
   // way (ffmpeg gdigrab -i desktop), and forcing CDP fullscreen was a likely
-  // source of the Chromium disconnects seen recording this way - a maximized
+  // source of Chromium disconnects seen recording this way - a maximized
   // window is a plainer, more stable state, and calibrate() below measures
   // whatever chrome/tab-strip offset it leaves rather than assuming zero.
-  //
-  // --start-maximized alone is a request, not a guarantee (some Windows
-  // configurations start it merely large, not truly maximized), so this
-  // asks the OS window manager directly and confirms the resulting state.
   const session = await context.newCDPSession(page);
   const { windowId } = await session.send("Browser.getWindowForTarget");
   await session.send("Browser.setWindowBounds", { windowId, bounds: { windowState: "maximized" } });
@@ -176,12 +212,8 @@ async function main() {
   const input = new OsInput();
   await input.start();
   useInput(input);
-  // Real input goes to the foreground window, so the browser has to own it
-  // before anything is calibrated or clicked.
   await input.focus();
   await calibrate(page);
-  await primeFileDialogs(page, input);
-  await input.focus();
 
   const recorder = RECORD ? new ScreenRecorder(OUTPUT_PATH) : null;
   if (recorder) await recorder.start();
@@ -189,172 +221,223 @@ async function main() {
   try {
     await beat(
       page,
-      "Agentic RAG — a bounded tool-calling agent over your own documents, with a retrieval evaluation harness built in.",
+      "TripAssist — a multi-agent AI system. Four specialist agents research your trip in parallel; a fifth synthesizes everything into one itinerary.",
       async () => {
-        await page.goto(`${BASE_URL}/login-ui`, { waitUntil: "networkidle" });
+        await page.goto(`${FRONTEND_URL}/login`, { waitUntil: "networkidle" });
       },
-      { holdMs: 2600, title: true }
+      { holdMs: 3800, title: true }
     );
 
-    await beat(page, "Every document is owned by a user, and every JWT-authenticated request is scoped to that ownership.", async () => {
-      await humanType(page, page.locator("#email"), ACCOUNT.email);
-      await humanType(page, page.locator("#password"), ACCOUNT.password);
-    });
-
-    await beat(page, "Logging in — JWT stored client-side, refreshed transparently by the shared auth client.", async () => {
-      await humanClick(page, page.locator("#loginBtn"));
-      await page.waitForURL(/\/ask-ui/, { timeout: 15000 });
-    });
-
-    await beat(page, "Documents — ingest text or PDF. Each upload is chunked, embedded, and indexed into Chroma under this user's doc_id.", async () => {
+    await beat(page, "New here — every trip is tied to an account, so trip history and total spend are tracked over time.", async () => {
       await Promise.all([
-        page.waitForURL(/\/documents-ui/, { timeout: 15000 }),
-        humanClick(page, page.locator('a[href="/documents-ui"]')),
+        page.waitForURL(/\/signup/, { timeout: 15000 }),
+        humanClick(page, page.locator('a[href="/signup"]')),
       ]);
       await page.waitForLoadState("networkidle");
     });
 
-    let newDocId = null;
-    await beat(
-      page,
-      "Uploading a 17-page privacy policy PDF — fixed-window chunking, page-aware citations, rapidfuzz de-duplication of repeated headers/footers.",
-      async () => {
-        await uploadThroughDialog(page, input, page.locator("#pdfInput"), PDF_PATH);
-        const [response] = await Promise.all([
-          page.waitForResponse((res) => res.url().includes("/rag/ingest/pdf") && res.request().method() === "POST"),
-          humanClick(page, page.locator("#ingestPdfBtn")),
-        ]);
-        const payload = await response.json();
-        newDocId = payload.doc_id;
-        await page.waitForTimeout(400);
-      },
-      { holdMs: 2600 }
-    );
-
-    await beat(page, "Ask — the agent refines the question, checks the semantic cache, then runs a bounded tool-calling loop over the retriever.", async () => {
-      // The documents table's own per-row "Ask" link already carries this
-      // doc_id, so this follows the same path a person would click.
-      await Promise.all([
-        page.waitForURL(/\/ask-ui\?doc_id=/, { timeout: 15000 }),
-        humanClick(page, page.locator(`a[href$="doc_id=${newDocId}"]`).first()),
-      ]);
-      await page.waitForLoadState("networkidle");
-    });
-
-    const question = "How does the policy define Personal Data under GDPR, and what legal bases does it list for processing it?";
-    await beat(page, `"${question}"`, async () => {
-      await humanType(page, page.locator("#question"), question);
+    await beat(page, "Signing up — name, email, password. Nothing exotic, just a normal account.", async () => {
+      await humanType(page, page.locator('input[autocomplete="name"]'), ACCOUNT.name);
+      await humanType(page, page.locator('input[autocomplete="email"]'), ACCOUNT.email);
+      await humanType(page, page.locator('input[autocomplete="new-password"]'), ACCOUNT.password);
     });
 
     await beat(
       page,
-      "Every factual line in the answer must end in a citation tag, or the agent refuses instead of guessing.",
+      "The password is hashed server-side; the JWT that comes back is stored client-side and sent as a bearer token on every request.",
       async () => {
         await Promise.all([
-          page.waitForResponse((res) => res.url().includes("/agent/ask") && res.request().method() === "POST"),
-          humanClick(page, page.locator("#askBtn")),
-        ]);
-        await page.waitForFunction(() => document.getElementById("meta").textContent.includes("status="), null, { timeout: 30000 });
-      },
-      { holdMs: 3400 }
-    );
-
-    await beat(page, "Evaluation — score the whole pipeline against a labeled dataset.", async () => {
-      await Promise.all([
-        page.waitForURL(/\/evaluations-ui/, { timeout: 15000 }),
-        humanClick(page, page.locator('a[href="/evaluations-ui"]')),
-      ]);
-      await page.waitForLoadState("networkidle");
-    });
-
-    await beat(
-      page,
-      "Hit@k, Recall@k, Precision@k, MRR, plus an LLM judge that scores whether the retrieved context was even sufficient to answer.",
-      async () => {
-        await Promise.all([
-          page.waitForURL(/\/evaluations-create-ui/, { timeout: 15000 }),
-          humanClick(page, page.locator('a[href="/evaluations-create-ui"]').first()),
+          page.waitForURL(/\/dashboard/, { timeout: 15000 }),
+          humanClick(page, page.getByRole("button", { name: "Sign up" })),
         ]);
         await page.waitForLoadState("networkidle");
-      }
+      },
+      { holdMs: 2400 }
     );
 
-    await beat(page, "Uploading a small labeled JSONL dataset for a quick live run.", async () => {
-      await humanClick(page, page.locator("#uploadDatasetBtn"));
-      await uploadThroughDialog(page, input, page.locator("#datasetFileInput"), DATASET_PATH);
+    await beat(page, "A fresh account starts with an empty trip history.", null, { holdMs: 2000 });
+
+    await beat(page, "Planning a trip feeds one form into five parallel agents: destination, flights, hotels, weather, and a synthesizer.", async () => {
+      await Promise.all([
+        page.waitForURL(/\/plan/, { timeout: 15000 }),
+        humanClick(page, page.getByRole("link", { name: "✈ Plan your first trip" })),
+      ]);
+      await page.waitForLoadState("networkidle");
     });
 
-    await beat(page, "Targeting the document we just ingested, k=12, LLM judge enabled.", async () => {
-      await page.locator("#documentSelect").selectOption({ value: newDocId });
-      await page.locator("#kInput").fill("12");
-      await page.waitForTimeout(300);
+    await beat(page, `"${TRIP.destination}" — the destination agent researches neighbourhoods, attractions, and local food here.`, async () => {
+      await humanType(page, page.getByPlaceholder("Destination(e.g. Tokyo, Japan)"), TRIP.destination);
+    });
+
+    await beat(page, "Origin runs through a city autocomplete — needed for flight search and for drawing the route on the map.", async () => {
+      await humanType(page, page.getByPlaceholder("e.g. Amsterdam, Netherlands"), TRIP.originTyped, { afterMs: 0 });
+      await pause(400);
+      await input.key("ENTER");
+      await pause(400);
     });
 
     await beat(
       page,
-      "Starting the run — it processes in the background; this page polls it live every 5 seconds.",
+      "Dates, travellers, travel style, budget, currency, payment method — all of it shapes what each agent goes and researches, not just the final writeup.",
       async () => {
-        await Promise.all([
-          page.waitForURL(/\/evaluations\/.+\/ui$/, { timeout: 15000 }),
-          humanClick(page, page.locator("#startEvalBtn")),
-        ]);
-        await page.waitForTimeout(600);
+        const dateInputs = page.locator('input[type="date"]');
+        await humanClick(page, dateInputs.nth(0));
+        await dateInputs.nth(0).fill(TRIP.departure);
+        await pause(200);
+        await humanClick(page, dateInputs.nth(1));
+        await dateInputs.nth(1).fill(TRIP.return);
+        await pause(200);
+        await humanClick(page, page.locator("button", { hasText: TRIP.style }));
+        await humanClick(page, page.locator("button", { hasText: TRIP.budget }));
+        await humanClick(page, page.locator("button", { hasText: TRIP.currency }));
+        await humanClick(page, page.locator("button", { hasText: TRIP.payment }));
       },
       { holdMs: 2400 }
     );
 
     await beat(
       page,
-      "Live progress: processed / total cases, and the running metric averages update as each case finishes.",
+      "Submitting kicks off the orchestrator — four agents launch together via asyncio.gather. Nothing here runs one at a time.",
       async () => {
-        // A plain page.waitForFunction here would leave the real OS cursor
-        // and keyboard silent for a minute or more while the run processes
-        // in the background - long enough on some Windows configurations
-        // for the display to idle-lock mid-recording. A tiny, imperceptible
-        // cursor twitch every few seconds keeps the session alive without
-        // touching anything on the page.
-        const deadline = Date.now() + 120000;
-        for (;;) {
-          const status = await page
-            .evaluate(() => (document.getElementById("runStatusBadge")?.textContent || "").trim())
-            .catch(() => "");
-          if (status === "completed") break;
-          if (Date.now() > deadline) throw new Error("Timed out waiting for the evaluation run to complete.");
-          await keepAwake();
-          await pause(3000);
-        }
-      },
-      { holdMs: 2200 }
-    );
-
-    await beat(
-      page,
-      "Completed — grouped Hit@k / Recall@k / MRR / context-relevance, a full per-case table, and one-click rerun of just the failed cases.",
-      async () => {
-        await page.mouse.wheel(0, 500);
-        await pause(400);
+        await Promise.all([
+          page.waitForURL(/\/trip\//, { timeout: 15000 }),
+          humanClick(page, page.getByRole("button", { name: "Make a plan for my trip" })),
+        ]);
+        await page.waitForLoadState("networkidle");
       },
       { holdMs: 2600 }
     );
 
-    // Re-focus after the long completion wait: a notification or the OS
-    // reclaiming attention during an idle stretch would otherwise send the
-    // next real click and keystrokes somewhere other than the browser.
-    await input.focus();
+    await beat(
+      page,
+      "Four independent agents, four independent statuses — each with its own elapsed timer and tool-call count, all updating live over one SSE connection.",
+      async () => {
+        await pause(2500);
+      },
+      { holdMs: 2600 }
+    );
 
-    await beat(page, "Every case drills into its retrieved chunks, matched keywords/phrases, and the judge's own explanation.", async () => {
-      const firstRow = page.locator("#casesBody button[data-case-id]").first();
-      await humanClick(page, firstRow);
-      await page.waitForSelector("#caseDrawer.is-open");
-    }, { holdMs: 3200 });
+    // The four parallel agents can finish in well under a minute on a fast
+    // backend, and the itinerary agent right behind them - fast enough that
+    // a leisurely, fixed-pace tour of each agent's card while they're still
+    // "live" isn't reliable. So the tour below happens on the completed,
+    // static cards instead: the Live Feed keeps every card (tool calls +
+    // full output) after it finishes, so nothing about the walkthrough
+    // depends on catching an agent mid-stream.
+    await beat(
+      page,
+      "The itinerary agent won't start until all four of those finish — it's the only one that runs sequentially, and the only one with no tools of its own.",
+      async () => {
+        await waitVisible(page, page.getByText("Your Itinerary"), { timeoutMs: 180000 });
+      },
+      { holdMs: 2400 }
+    );
+
+    // Re-focus after a wait of unpredictable length (real LLM + web-search
+    // calls): a notification or the OS reclaiming attention during an idle
+    // stretch would otherwise send the next real click and keystrokes
+    // somewhere other than the browser.
+    await input.focus();
 
     await beat(
       page,
-      "Agentic RAG — a hand-rolled agent loop, document-scoped retrieval, semantic caching, and a retrieval evaluator with an LLM judge built on top of a plain FastAPI + Postgres/pgvector backend.",
+      "All five agents done, and the day-by-day plan is Pydantic-validated into structured data — not just prose.",
+      null,
+      { holdMs: 2600 }
+    );
+
+    await beat(
+      page,
+      "Closing this for a moment to look at how each agent actually got here.",
       async () => {
-        await humanClick(page, page.locator("#closeDrawerBtn"));
+        await humanClick(page, page.locator('button[title="Close (Esc)"]'));
       },
-      { holdMs: 3200, title: true }
+      { holdMs: 1600 }
+    );
+
+    await beat(
+      page,
+      "The Live Feed keeps every agent's card after it finishes — the tool calls it made, and its full answer. Expanding one shows the whole thing.",
+      null,
+      { holdMs: 2600 }
+    );
+
+    await expandAgentCard(
+      page,
+      "Weather",
+      "Weather skips the LLM for the forecast itself — it geocodes the destination and calls Open-Meteo directly. The model only comes in afterward, to turn raw numbers into packing advice.",
+      { holdMs: 3600 }
+    );
+
+    await expandAgentCard(
+      page,
+      "Destination",
+      "Destination ran three separate Tavily searches — attractions, neighbourhoods, food — then synthesized all three into this write-up, streamed back token by token.",
+      { holdMs: 3600 }
+    );
+
+    await expandAgentCard(
+      page,
+      "Flights",
+      "Flights searched routes and current pricing for this exact origin, destination, and travel date — not a generic price page.",
+      { holdMs: 3200 }
+    );
+
+    await expandAgentCard(
+      page,
+      "Hotels",
+      "Hotels searched for stays matching the chosen budget tier and travel style specifically, then recommended real, named options.",
+      { holdMs: 3200 }
+    );
+
+    await expandAgentCard(
+      page,
+      "Itinerary",
+      "And this is the fifth agent's own raw synthesis — the same text that got parsed into the structured day cards.",
+      { holdMs: 3000 }
+    );
+
+    await beat(
+      page,
+      "Meanwhile the map geocoded origin and destination on its own and drew the route in — a plain Leaflet layer, no maps SDK.",
+      async () => {
+        await pause(1500);
+      },
+      { holdMs: 2400 }
+    );
+
+    await beat(
+      page,
+      "Back to the itinerary — selecting a day re-centers the map on that day's actual stops, with a numbered route between them.",
+      async () => {
+        await humanClick(page, page.getByRole("button", { name: "🗓 View itinerary" }));
+        await pause(600);
+        await humanClick(page, page.getByText(/^Day 1 ·/).first());
+        await pause(1200);
+      },
+      { holdMs: 2800 }
+    );
+
+    await beat(
+      page,
+      "TripAssist — agentic AI meets full-stack engineering: FastAPI orchestrating five agents with asyncio.gather and SSE streaming, Next.js and Zustand rendering it live, token by token.",
+      async () => {
+        await humanClick(page, page.locator('button[title="Close (Esc)"]'));
+      },
+      { holdMs: 4200, title: true }
+    );
+
+    await beat(
+      page,
+      "Back on the dashboard, the trip is saved with its total cost — nothing here disappears once the tab closes.",
+      async () => {
+        await Promise.all([
+          page.waitForURL(/\/dashboard/, { timeout: 15000 }),
+          humanClick(page, page.locator('a[href="/dashboard"]').first()),
+        ]);
+        await page.waitForLoadState("networkidle");
+      },
+      { holdMs: 3600, title: true }
     );
   } catch (err) {
     console.error("\nFAILED");
