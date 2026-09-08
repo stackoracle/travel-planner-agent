@@ -83,27 +83,28 @@ export function AgentCard({ agent }: Props) {
   return (
     <>
       <motion.div
+        className="tp-glass"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
         style={{
           borderLeft: `3px solid ${pulseBorder ? color : color + "99"}`,
-          backgroundColor: "#FFFFFF",
+          backgroundColor: "var(--tp-surface)",
           borderRadius: 8,
           overflow: "hidden",
           transition: "border-color 0.3s",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+          boxShadow: "var(--tp-card-shadow)",
         }}
       >
         {/* Header */}
         <div
           className="flex items-center gap-2 px-3 py-2"
-          style={{ borderBottom: "1px solid #E8E2D9" }}
+          style={{ borderBottom: "1px solid var(--tp-border)" }}
         >
           <StatusDot status={state.status} agent={agent} />
           <AgentBadge agent={agent} />
           {state.toolCalls.length > 0 && (
-            <span style={{ fontSize: 11, color: "#A89E94", marginLeft: 2 }}>
+            <span style={{ fontSize: 11, color: "var(--tp-text-muted)", marginLeft: 2 }}>
               {state.toolCalls.length} searches
             </span>
           )}
@@ -112,7 +113,7 @@ export function AgentCard({ agent }: Props) {
               <span
                 style={{
                   fontSize: 11,
-                  color: "#A89E94",
+                  color: "var(--tp-text-muted)",
                   fontFamily: "var(--font-jetbrains-mono)",
                 }}
               >
@@ -126,7 +127,7 @@ export function AgentCard({ agent }: Props) {
                 title="Expand"
                 style={{
                   fontSize: 13,
-                  color: "#A89E94",
+                  color: "var(--tp-text-muted)",
                   lineHeight: 1,
                   padding: "2px 4px",
                   borderRadius: 4,
@@ -146,7 +147,7 @@ export function AgentCard({ agent }: Props) {
             maxHeight: 200,
             overflowY: "auto",
             scrollbarWidth: "thin",
-            scrollbarColor: "#E8E2D9 transparent",
+            scrollbarColor: "var(--tp-border) transparent",
           }}
         >
           <div className="px-3 py-2 space-y-1">
@@ -155,7 +156,7 @@ export function AgentCard({ agent }: Props) {
                 key={i}
                 style={{
                   fontSize: 11,
-                  color: "#A89E94",
+                  color: "var(--tp-text-muted)",
                   fontFamily: "var(--font-jetbrains-mono)",
                   whiteSpace: "nowrap",
                   overflow: "hidden",
@@ -180,24 +181,25 @@ export function AgentCard({ agent }: Props) {
         typeof document !== "undefined" &&
         createPortal(
           <div
+            data-theme="trip-dark"
             className="fixed inset-0 flex items-center justify-center"
             style={{
               zIndex: 9999,
-              backgroundColor: "rgba(26,22,20,0.72)",
+              backgroundColor: "var(--tp-overlay)",
               backdropFilter: "blur(6px)",
             }}
             onClick={() => setFullscreen(false)}
           >
             <div
-              className="flex flex-col"
+              className="tp-glass flex flex-col"
               style={{
                 width: "min(780px, 92vw)",
                 height: "82vh",
-                backgroundColor: "#FFFFFF",
+                backgroundColor: "var(--tp-surface-panel)",
                 borderRadius: 12,
                 border: `2px solid ${color}`,
                 overflow: "hidden",
-                boxShadow: "0 24px 64px rgba(0,0,0,0.28)",
+                boxShadow: "var(--tp-modal-shadow)",
               }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -205,14 +207,14 @@ export function AgentCard({ agent }: Props) {
               <div
                 className="flex items-center gap-3 px-6 py-4 shrink-0"
                 style={{
-                  borderBottom: "1px solid #E8E2D9",
-                  backgroundColor: "#FAFAF8",
+                  borderBottom: "1px solid var(--tp-border)",
+                  backgroundColor: "var(--tp-surface-2)",
                 }}
               >
                 <StatusDot status={state.status} agent={agent} />
                 <AgentBadge agent={agent} />
                 {state.toolCalls.length > 0 && (
-                  <span style={{ fontSize: 12, color: "#A89E94" }}>
+                  <span style={{ fontSize: 12, color: "var(--tp-text-muted)" }}>
                     {state.toolCalls.length} searches
                   </span>
                 )}
@@ -221,7 +223,7 @@ export function AgentCard({ agent }: Props) {
                   className="ml-auto"
                   style={{
                     fontSize: 18,
-                    color: "#A89E94",
+                    color: "var(--tp-text-muted)",
                     lineHeight: 1,
                     padding: "4px 8px",
                     cursor: "pointer",
@@ -237,8 +239,8 @@ export function AgentCard({ agent }: Props) {
                 <div
                   className="flex flex-wrap gap-x-4 gap-y-1 px-6 py-2 shrink-0"
                   style={{
-                    borderBottom: "1px solid #E8E2D9",
-                    backgroundColor: "#FAFAF8",
+                    borderBottom: "1px solid var(--tp-border)",
+                    backgroundColor: "var(--tp-surface-2)",
                   }}
                 >
                   {state.toolCalls.map((call, i) => (
@@ -246,7 +248,7 @@ export function AgentCard({ agent }: Props) {
                       key={i}
                       style={{
                         fontSize: 11,
-                        color: "#A89E94",
+                        color: "var(--tp-text-muted)",
                         fontFamily: "var(--font-jetbrains-mono)",
                       }}
                     >
@@ -257,13 +259,16 @@ export function AgentCard({ agent }: Props) {
               )}
 
               {/* Full markdown content */}
-              <div className="flex-1 overflow-y-auto px-6 py-5 prose-content">
+              <div
+                className="flex-1 overflow-auto px-6 py-5 prose-content"
+                style={{ minHeight: 0 }}
+              >
                 {state.output ? (
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {state.output}
                   </ReactMarkdown>
                 ) : (
-                  <span style={{ color: "#A89E94", fontStyle: "italic" }}>
+                  <span style={{ color: "var(--tp-text-muted)", fontStyle: "italic" }}>
                     Waiting for content…
                   </span>
                 )}

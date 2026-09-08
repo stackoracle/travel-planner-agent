@@ -58,18 +58,18 @@
   --card-foreground: #1A1614;
   --popover: #FFFFFF;
   --popover-foreground: #1A1614;
-  --primary: #E8652A;
+  --primary: #2457B0;
   --primary-foreground: #FFFFFF;
   --secondary: #F4F1EC;
   --secondary-foreground: #1A1614;
   --muted: #F4F1EC;
   --muted-foreground: #6B6459;
-  --accent: #FDF0EA;
-  --accent-foreground: #E8652A;
+  --accent: #E9F1FC;
+  --accent-foreground: #2457B0;
   --destructive: oklch(0.577 0.245 27.325);
   --border: #E8E2D9;
   --input: #E8E2D9;
-  --ring: #E8652A;
+  --ring: #2457B0;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -78,24 +78,122 @@
   --radius: 0.5rem;
   --sidebar: #F4F1EC;
   --sidebar-foreground: #1A1614;
-  --sidebar-primary: #E8652A;
+  --sidebar-primary: #2457B0;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #FDF0EA;
-  --sidebar-accent-foreground: #E8652A;
+  --sidebar-accent: #E9F1FC;
+  --sidebar-accent-foreground: #2457B0;
   --sidebar-border: #E8E2D9;
-  --sidebar-ring: #E8652A;
+  --sidebar-ring: #2457B0;
 
-  /* Waypoint brand tokens */
-  --wp-accent: #E8652A;
-  --wp-accent-light: #FDF0EA;
-  --wp-accent-dark: #B84D1A;
+  /* TripAssist brand tokens */
+  --wp-accent: #2457B0;
+  --wp-accent-light: #E9F1FC;
+  --wp-accent-dark: #173B7A;
   --wp-text-muted: #A89E94;
   --wp-agent-destination: #E8652A;
   --wp-agent-flight: #2A6EE8;
   --wp-agent-hotel: #2AAE8C;
   --wp-agent-weather: #C49A00;
   --wp-agent-itinerary: #8B3A8B;
+
+  /* Trip dashboard theme tokens - light defaults. The dashboard subtree
+     references these instead of raw hex; [data-theme="trip-dark"] on the
+     trip page root (and each body-portal modal) swaps them for dark. */
+  --tp-bg: #FAFAF8;
+  --tp-surface: #FFFFFF;
+  --tp-surface-2: #FAFAF8;
+  --tp-surface-panel: #FFFFFF;
+  --tp-muted: #F4F1EC;
+  --tp-border: #E8E2D9;
+  --tp-text: #1A1614;
+  --tp-text-secondary: #6B6459;
+  --tp-text-muted: #A89E94;
+  --tp-accent: #2457B0;
+  --tp-accent-text: #2457B0;
+  --tp-accent-tint: #E9F1FC;
+  --tp-accent-ring: rgba(36, 87, 176, 0.13);
+  --tp-selected-header: #FEF6F1;
+  --tp-pill-bg: #F4F1EC;
+  --tp-pill-accent-bg: #FDF0EA;
+  --tp-pill-accent-border: #F3D9C8;
+  --tp-pill-accent-text: #B84D1A;
+  --tp-card-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  --tp-modal-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+  --tp-overlay: rgba(26, 22, 20, 0.72);
 }
+
+[data-theme="trip-dark"] {
+  color-scheme: dark;
+  /* Transparent-dark: --tp-bg is the one opaque base; every raised surface
+     is a translucent light film over it, so panels read as layered glass
+     rather than flat slabs. Pair with backdrop-filter on large containers. */
+  --tp-bg: #474553;
+  --tp-surface: rgba(255, 255, 255, 0.055);
+  --tp-surface-2: rgba(255, 255, 255, 0.028);
+  /* Denser frosted panel for large floating containers (modals, the plan
+     form) where see-through 5% film would sap text contrast. Kept a shade
+     lighter than --tp-bg so it still reads as raised. */
+  --tp-surface-panel: rgba(86, 84, 98, 0.82);
+  --tp-muted: rgba(255, 255, 255, 0.082);
+  --tp-border: rgba(255, 255, 255, 0.12);
+  --tp-text: #F1ECE6;
+  --tp-text-secondary: #C4BDB4;
+  --tp-text-muted: #9E968D;
+  --tp-accent: #5E92E6;
+  --tp-accent-text: #88AEEE;
+  --tp-accent-tint: rgba(94, 146, 230, 0.16);
+  --tp-accent-ring: rgba(94, 146, 230, 0.3);
+  --tp-selected-header: rgba(255, 255, 255, 0.06);
+  --tp-pill-bg: rgba(255, 255, 255, 0.07);
+  --tp-pill-accent-bg: rgba(233, 129, 79, 0.15);
+  --tp-pill-accent-border: rgba(233, 129, 79, 0.3);
+  --tp-pill-accent-text: #EF9366;
+  --tp-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.35), 0 10px 30px rgba(0, 0, 0, 0.25);
+  --tp-modal-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  --tp-overlay: rgba(10, 9, 12, 0.55);
+  --tp-glass-blur: saturate(1.4) blur(20px);
+}
+
+/* Frosted-glass surfaces - only where there is real depth behind them */
+[data-theme="trip-dark"] .tp-glass {
+  backdrop-filter: var(--tp-glass-blur);
+  -webkit-backdrop-filter: var(--tp-glass-blur);
+}
+
+/* Dark styling for markdown prose inside the trip dashboard */
+[data-theme="trip-dark"] .prose-content,
+[data-theme="trip-dark"] .prose-content strong,
+[data-theme="trip-dark"] .prose-content h1,
+[data-theme="trip-dark"] .prose-content h2,
+[data-theme="trip-dark"] .prose-content h3 {
+  color: var(--tp-text);
+}
+[data-theme="trip-dark"] .prose-content em {
+  color: var(--tp-text-secondary);
+}
+[data-theme="trip-dark"] .prose-content code {
+  background: var(--tp-muted);
+  color: var(--tp-text-secondary);
+}
+[data-theme="trip-dark"] .prose-content pre {
+  background: var(--tp-muted);
+  border-color: var(--tp-border);
+}
+[data-theme="trip-dark"] .prose-content pre code {
+  color: var(--tp-text-secondary);
+}
+[data-theme="trip-dark"] .prose-content hr,
+[data-theme="trip-dark"] .prose-content th,
+[data-theme="trip-dark"] .prose-content td {
+  border-color: var(--tp-border);
+}
+[data-theme="trip-dark"] .prose-content blockquote {
+  border-left-color: var(--tp-accent);
+  color: var(--tp-text-secondary);
+}
+
+/* The map itself stays bright (light Esri street tiles + default Leaflet
+   controls) - it is the one deliberately light surface on the dashboard. */
 
 @layer base {
   * {
@@ -172,8 +270,40 @@
   border-top: 1px solid #E8E2D9;
   margin: 0.8em 0;
 }
+.prose-content pre {
+  background: #F4F1EC;
+  border: 1px solid #E8E2D9;
+  border-radius: 6px;
+  padding: 0.6em 0.8em;
+  margin: 0.6em 0;
+  overflow-x: auto;
+}
+.prose-content pre code {
+  background: none;
+  padding: 0;
+  font-size: 11px;
+  color: #4A3F38;
+}
+.prose-content table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 0.6em 0;
+  font-size: 12px;
+}
+.prose-content th,
+.prose-content td {
+  border: 1px solid #E8E2D9;
+  padding: 4px 8px;
+  text-align: left;
+}
+.prose-content img {
+  max-width: 100%;
+}
 .prose-content blockquote {
-  border-left: 3px solid #E8652A;
+  border-left: 3px solid #2457B0;
   padding-left: 0.75em;
   color: #6B6459;
   font-style: italic;

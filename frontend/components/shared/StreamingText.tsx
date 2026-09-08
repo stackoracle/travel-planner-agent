@@ -20,7 +20,7 @@ const CURSOR = (
       fontSize: 13,
       lineHeight: 1,
       animation: "blink 1s step-end infinite",
-      color: "#E8652A",
+      color: "var(--tp-accent)",
       marginLeft: 1,
     }}
   >
@@ -44,7 +44,7 @@ export function StreamingText({ text, status, mono = false, className }: Props) 
           lineHeight: 1.6,
           whiteSpace: "pre-wrap",
           wordBreak: "break-word",
-          color: "#6B6459",
+          color: "var(--tp-text-secondary)",
         }}
       >
         {text}

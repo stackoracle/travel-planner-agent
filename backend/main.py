@@ -4,12 +4,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
 from api.routes import router
+from core.db import init_db
 
 load_dotenv()
 
 logger.add("logs/app.log", rotation="10 MB", retention="7 days", level="INFO")
 
-app = FastAPI(title="Waypoint Travel Agent API")
+app = FastAPI(title="TripAssist Travel Agent API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,7 +24,8 @@ app.include_router(router, prefix="/api")
 
 @app.on_event("startup")
 async def startup() -> None:
-    logger.info("Waypoint API started")
+    await init_db()
+    logger.info("TripAssist API started")
 
 
 if __name__ == "__main__":

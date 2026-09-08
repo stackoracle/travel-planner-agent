@@ -4,15 +4,24 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/store/authStore"
 
-export default function HomePage() {
+export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const token = useAuthStore((s) => s.token)
   const hasHydrated = useAuthStore((s) => s.hasHydrated)
 
   useEffect(() => {
     if (!hasHydrated) return
-    router.replace(token ? "/dashboard" : "/login")
+    if (!token) router.replace("/login")
   }, [hasHydrated, token, router])
 
-  return <main style={{ minHeight: "100vh", backgroundColor: "#FAFAF8" }} />
+  if (!hasHydrated || !token) {
+    return (
+      <main
+        data-theme="trip-dark"
+        style={{ minHeight: "100vh", backgroundColor: "var(--tp-bg)" }}
+      />
+    )
+  }
+
+  return <>{children}</>
 }

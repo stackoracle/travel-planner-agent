@@ -1,4 +1,4 @@
-# Waypoint - AI Travel Planner
+# TripAssist - AI Travel Planner
 
 A multi-agent AI travel planning tool that streams a complete trip package in real time. Five specialised agents run in parallel and synthesise destination research, flights, hotels, weather, and a day-by-day itinerary - all visible live in the browser as they work.
 

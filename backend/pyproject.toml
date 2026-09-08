@@ -1,5 +1,5 @@
 [project]
-name = "waypoint-backend"
+name = "TripAssist-backend"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
@@ -12,10 +12,16 @@ dependencies = [
     "tavily-python",
     "pydantic>=2.0",
     "loguru",
+    "pyjwt",
+    "email-validator",
 ]
 
 [dependency-groups]
-dev = ["ruff", "mypy"]
+dev = [
+    "ruff",
+    "mypy",
+    "watchfiles>=1.2.0",
+]
 
 [tool.ruff]
 line-length = 88

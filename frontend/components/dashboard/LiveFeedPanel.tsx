@@ -6,7 +6,7 @@ import { useShallow } from "zustand/react/shallow";
 import { AgentCard } from "@/components/cards/AgentCard";
 import { useTripStore } from "@/store/tripStore";
 
-const AGENT_ORDER = ["destination", "flight", "hotel", "weather", "itinerary"];
+const AGENT_ORDER = ["weather", "destination", "flight", "hotel", "itinerary"];
 
 export function LiveFeedPanel() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -19,77 +19,59 @@ export function LiveFeedPanel() {
     ),
   );
 
-  // Scroll to bottom whenever a new agent card appears
+  // Scroll to the newest card whenever one appears
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
     }
   }, [activeAgents.length]);
 
-  // Auto-scroll outer panel as card content grows during streaming
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const observer = new MutationObserver(() => {
-      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
-      if (nearBottom) el.scrollTop = el.scrollHeight;
-    });
-    observer.observe(el, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, []);
-
   return (
     <div
-      className="flex flex-col h-full"
-      style={{ borderLeft: "1px solid #E8E2D9" }}
+      className="flex items-center gap-6 px-6 py-3"
+      style={{
+        backgroundColor: "var(--tp-bg)",
+        borderTop: "1px solid var(--tp-border)",
+      }}
     >
-      {/* Panel header */}
-      <div
-        className="px-4 py-3 shrink-0"
+      <p
+        className="shrink-0"
         style={{
-          borderBottom: "1px solid #E8E2D9",
-          backgroundColor: "#FAFAF8",
+          fontSize: 11,
+          fontWeight: 600,
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+          color: "var(--tp-text-muted)",
         }}
       >
-        <p
-          style={{
-            fontSize: 11,
-            fontWeight: 600,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            color: "#A89E94",
-          }}
-        >
-          Live Feed
-        </p>
-      </div>
+        Live Feed
+      </p>
 
-      {/* Scrollable card list - min-h-0 is critical for flex shrink to work */}
       <div
         ref={scrollRef}
-        className="flex-1 min-h-0 overflow-y-auto"
+        className="flex-1 min-w-0 flex gap-3 overflow-x-auto"
         style={{
           scrollbarWidth: "thin",
-          scrollbarColor: "#E8E2D9 transparent",
+          scrollbarColor: "var(--tp-border) transparent",
         }}
       >
-        <div className="p-3 space-y-3">
-          <AnimatePresence initial={false}>
-            {activeAgents.map((agent) => (
-              // AgentCard subscribes to its own slice - only that card re-renders on its tokens
-              <AgentCard key={agent} agent={agent} />
-            ))}
-          </AnimatePresence>
+        <AnimatePresence initial={false}>
+          {activeAgents.map((agent) => (
+            // AgentCard subscribes to its own slice - only that card re-renders on its tokens
+            <div key={agent} className="shrink-0" style={{ width: 320 }}>
+              <AgentCard agent={agent} />
+            </div>
+          ))}
+        </AnimatePresence>
 
-          {activeAgents.length === 0 && (
-            <p
-              className="text-center pt-8"
-              style={{ fontSize: 13, color: "#A89E94" }}
-            >
-              Agents will appear here as they start…
-            </p>
-          )}
-        </div>
+        {activeAgents.length === 0 && (
+          <p
+            className="py-1 shrink-0"
+            style={{ fontSize: 13, color: "var(--tp-text-muted)" }}
+          >
+            Agents will appear here as they start…
+          </p>
+        )}
       </div>
     </div>
   );

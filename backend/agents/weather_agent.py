@@ -36,9 +36,21 @@ async def run_weather_agent(
 
         forecast_json = json.dumps(forecast, indent=2)
 
+        if forecast.get("historical"):
+            basis = (
+                "This data is NOT a live forecast - the trip is too far out for "
+                "one. It is the actual recorded weather for the same calendar "
+                "dates last year, used as a guide to typical conditions. Frame "
+                "the summary as 'typical conditions for this time of year', not "
+                "as a forecast."
+            )
+        else:
+            basis = "This is the live forecast for the travel dates."
+
         prompt = (
-            f"Given this weather forecast for {request.destination} from "
+            f"Weather data for {request.destination} covering "
             f"{request.departure_date} to {request.return_date}:\n{forecast_json}\n\n"
+            f"{basis}\n\n"
             f"Write a 2-paragraph weather summary and a practical packing list for a "
             f"{request.travel_style} trip."
         )

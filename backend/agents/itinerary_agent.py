@@ -22,11 +22,36 @@ class ItinerarySynthesis:
         total_estimated_cost: str,
         packing_list: list[str],
         map_query: str,
+        stopover: str = "",
+        summary_text: str = "",
     ) -> None:
         self.itinerary = itinerary
         self.total_estimated_cost = total_estimated_cost
         self.packing_list = packing_list
         self.map_query = map_query
+        self.stopover = stopover
+        # Readable day-by-day rendering, replayed into the live feed when a
+        # finished job is reopened (the raw LLM output is bare JSON).
+        self.summary_text = summary_text
+
+
+def _render_summary(
+    itinerary: list[DayPlan], total_estimated_cost: str, packing_list: list[str]
+) -> str:
+    lines: list[str] = []
+    for d in itinerary:
+        lines.append(f"**Day {d.day} · {d.date}**")
+        lines.append(f"- Morning: {d.morning}")
+        lines.append(f"- Afternoon: {d.afternoon}")
+        lines.append(f"- Evening: {d.evening}")
+        lines.append(f"- Stay: {d.accommodation}")
+        lines.append(f"- Est. cost: {d.estimated_cost}")
+        lines.append("")
+    lines.append(f"**Total estimated cost:** {total_estimated_cost}")
+    if packing_list:
+        lines.append("")
+        lines.append("**Packing list:** " + ", ".join(packing_list))
+    return "\n".join(lines)
 
 
 async def run_itinerary_agent(
@@ -63,7 +88,9 @@ async def run_itinerary_agent(
             '"locations": ["Place D", "Place E", "Place F"]}], '
             f'"total_estimated_cost": "~{request.currency}XXXX total per person", '
             '"packing_list": ["item1", "item2"], '
-            f'"map_query": "{request.destination}"}}'
+            f'"map_query": "{request.destination}", '
+            '"stopover": "City name of a common layover from the flight info, '
+            'or empty string if flights are typically nonstop"}}'
         )
 
         prompt = (
@@ -75,8 +102,17 @@ async def run_itinerary_agent(
             f"For each day include morning/afternoon/evening activities, where to stay, "  # noqa: E501
             f"estimated daily cost in {request.currency}, "
             f"a brief 'weather' note (temperature + conditions for that day from the forecast), "  # noqa: E501
-            f"and a 'locations' array of exactly 3 specific geocodable place names "
-            f"visited that day (one per time slot: morning, afternoon, evening).\n\n"
+            f"and a 'locations' array of exactly 3 place names visited that day "
+            f"(one per time slot: morning, afternoon, evening). Each must be a "
+            f"REAL, specific, named place that exists on a map - a landmark, "
+            f"museum, park, square, street or named venue in {request.destination} "
+            f"(e.g. 'Museumsinsel', 'Tiergarten'). Never generic descriptions "
+            f"like 'Cooking Class Venue', 'Local Restaurant', 'Nature Walk' or "
+            f"'Workshop Venue'; if a slot has no obvious landmark, reuse the "
+            f"nearest named one. "
+            f"Also read the flight info for a commonly mentioned layover/stopover city "
+            f"and put just its name (e.g. 'Dubai') in a 'stopover' field - use an "
+            f"empty string if the flight info doesn't mention one.\n\n"
             f"Respond ONLY with a valid JSON object (no markdown, no code fences) "
             f"exactly matching this structure:\n{schema_example}\n\n"
             f"DESTINATION GUIDE:\n{destination_out}\n\n"
@@ -120,9 +156,14 @@ async def run_itinerary_agent(
         )
 
         map_query = str(data.get("map_query", request.destination))
+        stopover = str(data.get("stopover") or "").strip()
+
+        summary_text = _render_summary(itinerary, total_cost, packing_list)
 
         await queue.put(AgentEvent(agent=AGENT, type="complete", data=output))
-        return ItinerarySynthesis(itinerary, total_cost, packing_list, map_query)
+        return ItinerarySynthesis(
+            itinerary, total_cost, packing_list, map_query, stopover, summary_text
+        )
 
     except Exception:
         logger.exception("itinerary_agent failed")

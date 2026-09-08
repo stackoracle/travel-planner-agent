@@ -21,10 +21,11 @@ function now(): string {
   return new Date().toTimeString().slice(0, 8);
 }
 
-export function useAgentStream(jobId: string | null) {
+export function useAgentStream(jobId: string | null, token: string | null) {
   const esRef = useRef<EventSource | null>(null);
   const retriesRef = useRef(0);
   const appendToken = useTripStore((s) => s.appendToken);
+  const setOutput = useTripStore((s) => s.setOutput);
   const setStatus = useTripStore((s) => s.setStatus);
   const addToolCall = useTripStore((s) => s.addToolCall);
   const addLog = useTripStore((s) => s.addLog);
@@ -32,11 +33,13 @@ export function useAgentStream(jobId: string | null) {
   const setRunning = useTripStore((s) => s.setRunning);
 
   useEffect(() => {
-    if (!jobId) return;
+    if (!jobId || !token) return;
 
     const connect = () => {
+      // EventSource can't set an Authorization header, so the token
+      // travels as a query param instead - the backend validates it.
       const es = new EventSource(
-        `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api"}/stream/${jobId}`,
+        `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api"}/stream/${jobId}?token=${encodeURIComponent(token)}`,
       );
       esRef.current = es;
 
@@ -60,6 +63,10 @@ export function useAgentStream(jobId: string | null) {
             addLog({ time: now(), agent, type, message: data });
             break;
           case "complete":
+            // data is the full accumulated body - trust it over the tokens
+            // we assembled, which may have gaps after a reconnect or be
+            // absent entirely when a finished job is replayed.
+            if (data) setOutput(agent, data);
             setStatus(agent, "complete");
             break;
           case "error":
@@ -70,7 +77,7 @@ export function useAgentStream(jobId: string | null) {
             es.close();
             setRunning(false);
             try {
-              const result = await getResult(jobId);
+              const result = await getResult(jobId, token);
               setResult(result);
             } catch {
               // result fetch failed - stream is still done
@@ -95,5 +102,5 @@ export function useAgentStream(jobId: string | null) {
     return () => {
       esRef.current?.close();
     };
-  }, [jobId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [jobId, token]); // eslint-disable-line react-hooks/exhaustive-deps
 }

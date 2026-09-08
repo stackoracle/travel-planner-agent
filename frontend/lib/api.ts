@@ -9,6 +9,7 @@ export interface TripRequest {
   travel_style: string
   travelers: number
   currency: string
+  payment_method: string
 }
 
 export interface DayPlan {
@@ -34,22 +35,33 @@ export interface TripResult {
   total_estimated_cost: string
   packing_list: string[]
   map_query: string
+  stopover?: string
 }
 
 export const startTrip = async (
-  payload: TripRequest
+  payload: TripRequest,
+  token?: string | null
 ): Promise<{ job_id: string }> => {
+  const headers: Record<string, string> = { "Content-Type": "application/json" }
+  if (token) headers.Authorization = `Bearer ${token}`
+
   const res = await fetch(`${API_BASE}/plan`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(payload),
   })
   if (!res.ok) throw new Error("Failed to start trip planning")
   return res.json() as Promise<{ job_id: string }>
 }
 
-export const getResult = async (jobId: string): Promise<TripResult> => {
-  const res = await fetch(`${API_BASE}/result/${jobId}`)
+export const getResult = async (
+  jobId: string,
+  token?: string | null
+): Promise<TripResult> => {
+  const headers: Record<string, string> = {}
+  if (token) headers.Authorization = `Bearer ${token}`
+
+  const res = await fetch(`${API_BASE}/result/${jobId}`, { headers })
   if (!res.ok) throw new Error("Failed to fetch result")
   return res.json() as Promise<TripResult>
 }

@@ -19,14 +19,14 @@ export function DayCard({ plan, selected = false, onSelect }: Props) {
       style={{
         width: 240,
         flexShrink: 0,
-        backgroundColor: selected ? "#FDF0EA" : "#F4F1EC",
-        border: `1.5px solid ${selected ? "#E8652A" : "#E8E2D9"}`,
+        backgroundColor: selected ? "var(--tp-accent-tint)" : "var(--tp-muted)",
+        border: `1.5px solid ${selected ? "var(--tp-accent)" : "var(--tp-border)"}`,
         borderRadius: 8,
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         cursor: onSelect ? "pointer" : "default",
-        boxShadow: selected ? "0 0 0 3px #E8652A22" : "none",
+        boxShadow: selected ? "0 0 0 3px var(--tp-accent-ring)" : "none",
         transition: "background-color 0.15s, border-color 0.15s, box-shadow 0.15s",
       }}
     >
@@ -34,8 +34,10 @@ export function DayCard({ plan, selected = false, onSelect }: Props) {
       <div
         className="px-4 py-3"
         style={{
-          borderBottom: "1px solid #E8E2D9",
-          backgroundColor: selected ? "#FEF6F1" : "#FFFFFF",
+          borderBottom: "1px solid var(--tp-border)",
+          backgroundColor: selected
+            ? "var(--tp-selected-header)"
+            : "var(--tp-surface)",
           transition: "background-color 0.15s",
         }}
       >
@@ -44,7 +46,7 @@ export function DayCard({ plan, selected = false, onSelect }: Props) {
             fontFamily: "var(--font-playfair)",
             fontSize: 16,
             fontWeight: 600,
-            color: selected ? "#E8652A" : "#1A1614",
+            color: selected ? "var(--tp-accent-text)" : "var(--tp-text)",
             transition: "color 0.15s",
           }}
         >
@@ -57,11 +59,15 @@ export function DayCard({ plan, selected = false, onSelect }: Props) {
         <div
           className="px-4 py-2"
           style={{
-            borderBottom: "1px solid #E8E2D9",
-            backgroundColor: selected ? "#FEF6F1" : "#FAFAF8",
+            borderBottom: "1px solid var(--tp-border)",
+            backgroundColor: selected
+              ? "var(--tp-selected-header)"
+              : "var(--tp-surface-2)",
           }}
         >
-          <p style={{ fontSize: 12, color: "#6B6459" }}>🌡️ {plan.weather}</p>
+          <p style={{ fontSize: 12, color: "var(--tp-text-secondary)" }}>
+            🌡️ {plan.weather}
+          </p>
         </div>
       )}
 
@@ -75,10 +81,15 @@ export function DayCard({ plan, selected = false, onSelect }: Props) {
       {/* Footer */}
       <div
         className="px-4 py-2"
-        style={{ borderTop: "1px solid #E8E2D9", backgroundColor: "#FFFFFF" }}
+        style={{
+          borderTop: "1px solid var(--tp-border)",
+          backgroundColor: "var(--tp-surface)",
+        }}
       >
-        <p style={{ fontSize: 12, color: "#6B6459" }}>{plan.accommodation}</p>
-        <p style={{ fontSize: 13, fontWeight: 600, color: "#E8652A" }}>
+        <p style={{ fontSize: 12, color: "var(--tp-text-secondary)" }}>
+          {plan.accommodation}
+        </p>
+        <p style={{ fontSize: 13, fontWeight: 600, color: "var(--tp-accent-text)" }}>
           {plan.estimated_cost}
         </p>
       </div>
@@ -100,14 +111,21 @@ function Section({
       <p
         style={{
           fontSize: 11,
-          color: "#A89E94",
+          color: "var(--tp-text-muted)",
           fontWeight: 600,
           letterSpacing: "0.04em",
         }}
       >
         {emoji} {label.toUpperCase()}
       </p>
-      <p style={{ fontSize: 13, color: "#1A1614", marginTop: 2, lineHeight: 1.5 }}>
+      <p
+        style={{
+          fontSize: 13,
+          color: "var(--tp-text)",
+          marginTop: 2,
+          lineHeight: 1.5,
+        }}
+      >
         {text}
       </p>
     </div>

@@ -42,6 +42,7 @@ interface Store {
   setJobId: (id: string) => void
   setRunning: (running: boolean) => void
   appendToken: (agent: string, token: string) => void
+  setOutput: (agent: string, text: string) => void
   setStatus: (agent: string, status: AgentStatus) => void
   addToolCall: (agent: string, call: string) => void
   addLog: (entry: LogEntry) => void
@@ -72,6 +73,20 @@ export const useTripStore = create<Store>((set) => ({
           output: (s.agents[agent]?.output ?? "") + token,
           tokenCount: (s.agents[agent]?.tokenCount ?? 0) + 1,
           status: "active" as AgentStatus,
+        },
+      },
+    })),
+
+  // Replace the whole body in one shot. The stream's "complete" event carries
+  // the full accumulated text; trusting it heals any tokens missed during a
+  // reconnect and populates the body when a finished job is replayed.
+  setOutput: (agent, text) =>
+    set((s) => ({
+      agents: {
+        ...s.agents,
+        [agent]: {
+          ...(s.agents[agent] ?? defaultAgentState()),
+          output: text,
         },
       },
     })),
@@ -119,5 +134,6 @@ export const useTripStore = create<Store>((set) => ({
       agents: Object.fromEntries(AGENTS.map((a) => [a, defaultAgentState()])),
       logs: [],
       result: null,
+      selectedDay: null,
     }),
 }))

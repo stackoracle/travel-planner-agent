@@ -26,13 +26,13 @@ async def run_destination_agent(
         )
 
         r1 = await run_web_search(
-            f"top attractions {request.destination} 2025", AGENT, queue
+            f"points of interest {request.destination}", AGENT, queue
         )
         r2 = await run_web_search(
-            f"best neighbourhoods to stay {request.destination}", AGENT, queue
+            f"recommended accommodation areas {request.destination}", AGENT, queue
         )
         r3 = await run_web_search(
-            f"must-try food experiences {request.destination}", AGENT, queue
+            f"regional cuisine and activities {request.destination}", AGENT, queue
         )
 
         context = "\n\n".join(
@@ -42,10 +42,19 @@ async def run_destination_agent(
         )
 
         prompt = (
-            "You are a seasoned travel writer. Research the top attractions, "
-            "best neighbourhoods to stay in, and must-try local food and "
-            f"experiences in {request.destination}. "
-            "Be specific and practical, not generic."
+            "You are a seasoned travel writer. Write a practical destination "
+            f"guide for {request.destination}. Be specific and concrete, not "
+            "generic.\n\n"
+            "Structure the guide under exactly these three Markdown headings, "
+            "in this order, using this exact wording:\n"
+            "## Points of Interests\n"
+            "## Recommended Accomodation Areas\n"
+            "## Regional Cuisine and Activities\n\n"
+            "Under 'Points of Interests', cover the landmarks and sights worth "
+            "visiting. Under 'Recommended Accomodation Areas', describe the best "
+            "neighbourhoods to stay in and who each suits. Under 'Regional "
+            "Cuisine and Activities', cover standout local dishes, food spots, "
+            "and hands-on experiences."
             f"\n\nResearch data:\n{context}"
         )
 

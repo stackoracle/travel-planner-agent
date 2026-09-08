@@ -1,14 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTripStore } from "@/store/tripStore";
 import { DayCard } from "@/components/cards/DayCard";
-
-const HANDLE_H = 6;
-const HEADER_H = 52;
-const MIN_CARDS_H = 100;
-const DEFAULT_H = 320;
 
 export function ItineraryPanel() {
   const result = useTripStore((s) => s.result);
@@ -18,159 +14,170 @@ export function ItineraryPanel() {
   const selectedDay = useTripStore((s) => s.selectedDay);
   const setSelectedDay = useTripStore((s) => s.setSelectedDay);
 
-  const show =
-    itineraryStatus === "complete" && result && result.itinerary.length > 0;
+  const ready =
+    itineraryStatus === "complete" && !!result && result.itinerary.length > 0;
 
-  const [panelH, setPanelH] = useState(DEFAULT_H);
-  const [collapsed, setCollapsed] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  const dragging = useRef(false);
-  const startY = useRef(0);
-  const startH = useRef(0);
-
-  const onDragStart = (e: React.MouseEvent) => {
-    dragging.current = true;
-    setIsDragging(true);
-    startY.current = e.clientY;
-    startH.current = panelH;
-    e.preventDefault();
-  };
+  // Pop open automatically once the itinerary finishes - same interaction
+  // as clicking an agent card's Expand button, just triggered by completion
+  // instead of a click. Adjusting state during render (React's documented
+  // pattern for this) rather than in an effect, so a manual close isn't
+  // immediately reopened on the next render while `ready` stays true.
+  const [prevReady, setPrevReady] = useState(ready);
+  if (ready !== prevReady) {
+    setPrevReady(ready);
+    if (ready) setOpen(true);
+  }
 
   useEffect(() => {
-    const onMove = (e: MouseEvent) => {
-      if (!dragging.current) return;
-      const delta = startY.current - e.clientY;
-      setPanelH(
-        Math.min(
-          600,
-          Math.max(MIN_CARDS_H + HANDLE_H + HEADER_H, startH.current + delta),
-        ),
-      );
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
     };
-    const onUp = () => {
-      dragging.current = false;
-      setIsDragging(false);
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-  }, []);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
 
-  const totalH = collapsed ? HANDLE_H + HEADER_H : panelH;
-  const cardsH = panelH - HANDLE_H - HEADER_H;
+  if (!ready) return null;
 
   return (
-    <AnimatePresence>
-      {show && (
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 40 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
+    <>
+      {/* Reopen affordance - only needed once the auto-opened window is closed */}
+      {!open && (
+        <button
+          onClick={() => setOpen(true)}
           style={{
-            borderTop: "1px solid #E8E2D9",
-            backgroundColor: "#FAFAF8",
-            flexShrink: 0,
-            height: totalH,
-            transition: isDragging ? "none" : "height 0.2s ease",
-            overflow: "hidden",
+            position: "fixed",
+            right: 24,
+            bottom: 24,
+            zIndex: 40,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "10px 18px",
+            borderRadius: 999,
+            backgroundColor: "#8B3A8B",
+            color: "#FFFFFF",
+            fontSize: 13,
+            fontWeight: 600,
+            border: "none",
+            cursor: "pointer",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
           }}
         >
-          {/* Drag handle */}
-          <div
-            onMouseDown={onDragStart}
-            style={{
-              height: HANDLE_H,
-              cursor: "row-resize",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <div
-              style={{
-                width: 36,
-                height: 3,
-                borderRadius: 2,
-                backgroundColor: isDragging ? "#E8652A" : "#D4CFC8",
-                transition: "background-color 0.15s",
-              }}
-            />
-          </div>
-
-          {/* Header */}
-          <div
-            className="px-6 flex items-center justify-between"
-            style={{
-              height: HEADER_H,
-              borderBottom: collapsed ? "none" : "1px solid #E8E2D9",
-            }}
-          >
-            <div>
-              <p
-                style={{
-                  fontFamily: "var(--font-playfair)",
-                  fontSize: 18,
-                  fontWeight: 600,
-                  color: "#1A1614",
-                }}
-              >
-                Your Itinerary
-              </p>
-              {!collapsed && result!.total_estimated_cost && (
-                <p style={{ fontSize: 12, color: "#A89E94", marginTop: 1 }}>
-                  Est. total · {result!.total_estimated_cost}
-                </p>
-              )}
-            </div>
-
-            <button
-              onClick={() => setCollapsed((c) => !c)}
-              style={{
-                fontSize: 13,
-                color: "#A89E94",
-                padding: "4px 10px",
-                borderRadius: 6,
-                border: "1px solid #E8E2D9",
-                backgroundColor: "#FFFFFF",
-                cursor: "pointer",
-                lineHeight: 1,
-              }}
-            >
-              {collapsed ? "▲ Expand" : "▼ Collapse"}
-            </button>
-          </div>
-
-          {/* Day cards - flex wrap */}
-          {!collapsed && (
-            <div
-              className="flex flex-wrap gap-4 overflow-y-auto px-6 py-4"
-              style={{ height: cardsH }}
-            >
-              {result!.itinerary.map((day, i) => (
-                <motion.div
-                  key={day.day}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.06, duration: 0.25 }}
-                >
-                  <DayCard
-                    plan={day}
-                    selected={selectedDay === day.day}
-                    onSelect={() =>
-                      setSelectedDay(selectedDay === day.day ? null : day.day)
-                    }
-                  />
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </motion.div>
+          🗓 View itinerary
+        </button>
       )}
-    </AnimatePresence>
+
+      {typeof document !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            {open && (
+              <motion.div
+                data-theme="trip-dark"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 flex items-center justify-center"
+                style={{
+                  zIndex: 9999,
+                  backgroundColor: "var(--tp-overlay)",
+                  backdropFilter: "blur(6px)",
+                }}
+                onClick={() => setOpen(false)}
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 40 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="tp-glass flex flex-col"
+                  style={{
+                    width: "min(1100px, 94vw)",
+                    height: "82vh",
+                    backgroundColor: "var(--tp-surface-panel)",
+                    borderRadius: 12,
+                    border: "2px solid #8B3A8B",
+                    overflow: "hidden",
+                    boxShadow: "var(--tp-modal-shadow)",
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Header */}
+                  <div
+                    className="flex items-center justify-between px-6 py-4 shrink-0"
+                    style={{
+                      borderBottom: "1px solid var(--tp-border)",
+                      backgroundColor: "var(--tp-surface-2)",
+                    }}
+                  >
+                    <div>
+                      <p
+                        style={{
+                          fontFamily: "var(--font-playfair)",
+                          fontSize: 20,
+                          fontWeight: 600,
+                          color: "var(--tp-text)",
+                        }}
+                      >
+                        Your Itinerary
+                      </p>
+                      {result.total_estimated_cost && (
+                        <p
+                          style={{
+                            fontSize: 12,
+                            color: "var(--tp-text-muted)",
+                            marginTop: 2,
+                          }}
+                        >
+                          Est. total · {result.total_estimated_cost}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setOpen(false)}
+                      style={{
+                        fontSize: 18,
+                        color: "var(--tp-text-muted)",
+                        lineHeight: 1,
+                        padding: "4px 8px",
+                        cursor: "pointer",
+                      }}
+                      title="Close (Esc)"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* Day cards */}
+                  <div
+                    className="flex-1 flex flex-wrap gap-4 overflow-y-auto px-6 py-5"
+                    style={{ minHeight: 0 }}
+                  >
+                    {result.itinerary.map((day, i) => (
+                      <motion.div
+                        key={day.day}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.06, duration: 0.25 }}
+                      >
+                        <DayCard
+                          plan={day}
+                          selected={selectedDay === day.day}
+                          onSelect={() =>
+                            setSelectedDay(selectedDay === day.day ? null : day.day)
+                          }
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body,
+        )}
+    </>
   );
 }

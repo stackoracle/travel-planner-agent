@@ -17,6 +17,9 @@ __pycache__/
 logs/
 *.log
 
+# SQLite
+*.db
+
 # Type checker / linter caches
 .mypy_cache/
 .ruff_cache/

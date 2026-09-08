@@ -2,12 +2,18 @@ from __future__ import annotations
 
 import asyncio
 import os
+from datetime import date
 from typing import Any
 
 import httpx
 from loguru import logger
 
 from schemas.events import AgentEvent, AgentName
+
+# Open-Meteo's forecast endpoint only reaches ~16 days ahead. Past that we
+# substitute the same calendar dates from a recent year via the archive API.
+_FORECAST_HORIZON_DAYS = 14
+_DAILY_METRICS = "weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum"
 
 
 async def run_web_search(
@@ -111,23 +117,52 @@ async def _geocode(place: str) -> tuple[float, float]:
         return float(first["latitude"]), float(first["longitude"])
 
 
+def _shift_year(iso: str, years: int) -> str:
+    d = date.fromisoformat(iso)
+    try:
+        return d.replace(year=d.year + years).isoformat()
+    except ValueError:  # 29 Feb -> 28 Feb
+        return d.replace(year=d.year + years, day=28).isoformat()
+
+
 async def _open_meteo_forecast(
     lat: float, lon: float, start: str, end: str
 ) -> dict[str, Any]:
-    url = "https://api.open-meteo.com/v1/forecast"
-    params: dict[str, Any] = {
-        "latitude": lat,
-        "longitude": lon,
-        "daily": "weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum",
-        "start_date": start,
-        "end_date": end,
-        "timezone": "auto",
-    }
+    days_out = (date.fromisoformat(end) - date.today()).days
+
+    if days_out <= _FORECAST_HORIZON_DAYS:
+        url = "https://api.open-meteo.com/v1/forecast"
+        params: dict[str, Any] = {
+            "latitude": lat,
+            "longitude": lon,
+            "daily": _DAILY_METRICS,
+            "start_date": start,
+            "end_date": end,
+            "timezone": "auto",
+        }
+        historical = False
+    else:
+        # Too far out for a real forecast - use the same dates last year as a
+        # typical-weather proxy. The archive lags a few days, so a full year
+        # back is always available.
+        url = "https://archive-api.open-meteo.com/v1/archive"
+        params = {
+            "latitude": lat,
+            "longitude": lon,
+            "daily": _DAILY_METRICS,
+            "start_date": _shift_year(start, -1),
+            "end_date": _shift_year(end, -1),
+            "timezone": "auto",
+        }
+        historical = True
+
     async with httpx.AsyncClient(timeout=10.0) as client:
         resp = await client.get(url, params=params)
         resp.raise_for_status()
         result: dict[str, Any] = resp.json()
-        return result
+
+    result["historical"] = historical
+    return result
 
 
 async def _exchangerate_convert(amount: float, frm: str, to: str) -> float:

@@ -9,6 +9,8 @@ from agents.flight_agent import run_flight_agent
 from agents.hotel_agent import run_hotel_agent
 from agents.itinerary_agent import run_itinerary_agent
 from agents.weather_agent import run_weather_agent
+from core.cost_parser import parse_cost_amount
+from core.db import create_trip
 from core.job_store import get_job
 from schemas.events import AgentEvent
 from schemas.requests import TripRequest
@@ -48,15 +50,37 @@ async def run_trip_planning(
             flight_summary=flight_out[:500] or "N/A",
             hotel_summary=hotel_out[:500] or "N/A",
             weather_summary=weather_out[:500] or "N/A",
+            destination_detail=dest_out,
+            flight_detail=flight_out,
+            hotel_detail=hotel_out,
+            weather_detail=weather_out,
+            itinerary_detail=synthesis.summary_text,
             itinerary=synthesis.itinerary,
             total_estimated_cost=synthesis.total_estimated_cost,
             packing_list=synthesis.packing_list,
             map_query=synthesis.map_query,
+            stopover=synthesis.stopover,
         )
 
         job = get_job(job_id)
         if job:
             job.result = result
+            if job.user_id:
+                await create_trip(
+                    user_id=job.user_id,
+                    job_id=job_id,
+                    destination=request.destination,
+                    origin=request.origin,
+                    departure_date=request.departure_date,
+                    return_date=request.return_date,
+                    travelers=request.travelers,
+                    currency=request.currency,
+                    total_estimated_cost_text=synthesis.total_estimated_cost,
+                    total_estimated_cost_amount=parse_cost_amount(
+                        synthesis.total_estimated_cost, request.travelers
+                    ),
+                    result_json=result.model_dump_json(),
+                )
 
     except Exception:
         logger.exception("orchestrator failed")

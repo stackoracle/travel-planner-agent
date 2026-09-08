@@ -1,4 +1,4 @@
-# Waypoint - AI Travel Planner Agent · CLAUDE.md
+# TripAssist - AI Travel Planner Agent · CLAUDE.md
 
 > Multi-agent travel planning tool with real-time streaming output.
 > Built as a portfolio project to showcase agentic AI, SSE streaming, parallel tool use, and rich UI.
@@ -183,7 +183,7 @@ GOOGLE_MAPS_EMBED_KEY=your_key  # free tier, Maps Embed API only
 
 ```toml
 [project]
-name = "waypoint-backend"
+name = "TripAssist-backend"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
@@ -244,7 +244,7 @@ from api.routes import router
 
 logger.add("logs/app.log", rotation="10 MB", retention="7 days", level="INFO")
 
-app = FastAPI(title="Waypoint Travel Agent API")
+app = FastAPI(title="TripAssist Travel Agent API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -257,7 +257,7 @@ app.include_router(router, prefix="/api")
 
 @app.on_event("startup")
 async def startup() -> None:
-    logger.info("Waypoint API started")
+    logger.info("TripAssist API started")
 
 if __name__ == "__main__":
     import uvicorn
@@ -694,7 +694,7 @@ Three-column layout + bottom reveal. Full viewport, no page scroll.
 
 ```
 ┌────────────────────────────────────────────────────────────────────┐
-│ HEADER  ✈ Waypoint  ·  Tokyo, Japan  ·  Sep 1–10  ·  2 travelers  │  56px
+│ HEADER  ✈ TripAssist  ·  Tokyo, Japan  ·  Sep 1–10  ·  2 travelers  │  56px
 ├────────────────┬───────────────────────────┬───────────────────────┤
 │ AGENT STATUS   │  MAP                      │ LIVE FEED             │
 │ (240px fixed)  │  (flex-1)                 │ (320px fixed)         │

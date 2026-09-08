@@ -39,7 +39,7 @@ export function StatusDot({ status, agent, size = 12 }: Props) {
           width: dim,
           height: dim,
           borderRadius: "50%",
-          border: "2px solid #A89E94",
+          border: "2px solid var(--tp-text-muted)",
           flexShrink: 0,
         }}
       />

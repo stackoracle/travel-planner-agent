@@ -8,8 +8,9 @@ from schemas.responses import TripResult
 
 
 class Job:
-    def __init__(self, job_id: str) -> None:
+    def __init__(self, job_id: str, user_id: str | None = None) -> None:
         self.job_id = job_id
+        self.user_id = user_id
         self.queue: asyncio.Queue[AgentEvent] = asyncio.Queue()
         self.result: TripResult | None = None
 
@@ -17,9 +18,9 @@ class Job:
 _jobs: dict[str, Job] = {}
 
 
-def create_job() -> Job:
+def create_job(user_id: str | None = None) -> Job:
     job_id = str(uuid.uuid4())
-    job = Job(job_id)
+    job = Job(job_id, user_id)
     _jobs[job_id] = job
     return job
 

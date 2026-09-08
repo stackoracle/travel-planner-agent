@@ -4,12 +4,20 @@ import {
   Plus_Jakarta_Sans,
   JetBrains_Mono,
   Lora,
+  Caveat,
 } from "next/font/google";
 import "./globals.css";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-playfair",
+});
+
+// Casual scrawl for the logo - reads like it was written on the back of a hand
+const caveat = Caveat({
+  subsets: ["latin"],
+  variable: "--font-handwriting",
+  weight: ["500", "700"],
 });
 
 // Replaces DM Sans - keeps the same CSS variable so all components pick it up automatically
@@ -31,7 +39,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Waypoint - AI Travel Planner",
+  title: "TripAssist - AI Travel Planner",
   description: "Multi-agent AI travel planning with real-time research",
 };
 
@@ -41,7 +49,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${playfair.variable} ${jakarta.variable} ${lora.variable} ${jetbrainsMono.variable} h-full`}
+      className={`${playfair.variable} ${jakarta.variable} ${lora.variable} ${jetbrainsMono.variable} ${caveat.variable} h-full`}
     >
       <body className="min-h-full antialiased">{children}</body>
     </html>
