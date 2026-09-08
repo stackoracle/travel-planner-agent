@@ -37,8 +37,8 @@ Five agents run - four in parallel, one synthesises after.
 
 ```
 /
-├── frontend/         ← Next.js App Router + Turbopack + shadcn/ui
-└── backend/          ← FastAPI + OpenAI streaming + external APIs
+├── frontend/        ← Next.js App Router + Turbopack + shadcn/ui
+└── backend/         ← FastAPI + OpenAI streaming + external APIs
 ```
 
 ### `backend/`
